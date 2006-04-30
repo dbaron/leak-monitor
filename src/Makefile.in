@@ -52,6 +52,7 @@ REQUIRES	= \
 		  xpcom \
 		  js \
 		  xpconnect \
+		  embedcomponents \
 		  $(NULL)
 
 DEFINES		+= -DMOZILLA_STRICT_API

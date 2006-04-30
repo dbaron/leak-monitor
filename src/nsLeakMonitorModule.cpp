@@ -38,8 +38,15 @@
 // Internal includes
 #include "nsLeakMonitorService.h"
 
+// Frozen APIs
+#include "nsICategoryManager.h"
+
 // XPCOM glue APIs
 #include "nsIGenericFactory.h"
+#include "nsServiceManagerUtils.h"
+
+// ???
+#include "nsIAppStartupNotifier.h"
 
 // 1ee1b3fc-e896-4ac9-870f-43d3a0581dc8
 #define NS_LEAKMONITOR_SERVICE_CID \
@@ -49,15 +56,66 @@
 #define NS_LEAKMONITOR_SERVICE_CONTRACTID \
     "@dbaron.org/leak-monitor-service;1"
 
+#define NS_LEAKMONITOR_SERVICE_ENTRY_NAME \
+    "nsLeakMonitorService"
+
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsLeakMonitorService)
+
+static NS_METHOD
+RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
+                          const char *aLoaderStr, const char *aType,
+                          const nsModuleComponentInfo *aInfo)
+{
+    nsresult rv;
+    nsCOMPtr<nsICategoryManager> catMan =
+        do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    const char service[] = "service,";
+    // sizeof() includes room for terminating null
+    char *value = NS_STATIC_CAST(char*,
+        NS_Alloc(sizeof(service) + strlen(aInfo->mContractID)));
+    if (!value)
+        return NS_ERROR_OUT_OF_MEMORY;
+    strcpy(value, service);
+    strcat(value, aInfo->mContractID);
+    rv = catMan->AddCategoryEntry(APPSTARTUP_CATEGORY,
+                                  aInfo->mContractID, value,
+                                  PR_TRUE, PR_TRUE, nsnull);
+    NS_Free(value);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return NS_OK;
+}
+
+static NS_METHOD
+UnregisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile *aPath,
+                            const char *aLoaderStr,
+                            const nsModuleComponentInfo *aInfo)
+{
+    nsresult rv;
+    nsCOMPtr<nsICategoryManager> catMan =
+        do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = catMan->DeleteCategoryEntry(APPSTARTUP_CATEGORY,
+                                     aInfo->mContractID,
+                                     PR_TRUE);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    return NS_OK;
+}
+
 
 static const nsModuleComponentInfo components[] =
 {
   { "nsLeakMonitorService",
     NS_LEAKMONITOR_SERVICE_CID,
     NS_LEAKMONITOR_SERVICE_CONTRACTID,
-    nsLeakMonitorServiceConstructor
-  },
+    nsLeakMonitorServiceConstructor,
+    RegisterServiceForStartup,
+    UnregisterServiceForStartup
+  }
 };
 
 NS_IMPL_NSGETMODULE(nsLeakMonitorModule, components)

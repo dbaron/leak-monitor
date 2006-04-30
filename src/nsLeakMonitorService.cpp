@@ -47,6 +47,9 @@
 #include "nsDebug.h"
 #include "nsServiceManagerUtils.h"
 
+// ???
+#include "nsIAppStartupNotifier.h"
+
 /* static */ nsLeakMonitorService* nsLeakMonitorService::gService = nsnull;
 /* static */ JSGCCallback nsLeakMonitorService::gNextGCCallback = nsnull;
 
@@ -67,7 +70,15 @@ nsLeakMonitorService::~nsLeakMonitorService()
     gService = nsnull;
 }
 
-NS_IMPL_ISUPPORTS0(nsLeakMonitorService)
+NS_IMPL_ISUPPORTS1(nsLeakMonitorService, nsIObserver)
+
+NS_IMETHODIMP
+nsLeakMonitorService::Observe(nsISupports *aSubject, const char *aTopic,
+                              const PRUnichar *aData)
+{
+    NS_ASSERTION(!strcmp(aTopic, APPSTARTUP_TOPIC), "bad topic");
+    return NS_OK;
+}
 
 nsresult
 nsLeakMonitorService::Init()
@@ -124,10 +135,16 @@ nsLeakMonitorService::GCCallback(JSContext *cx, JSGCStatus status)
     return result;
 }
 
+struct JSContextInfoEntry : public PLDHashEntryStub {
+};
+
 void
 nsLeakMonitorService::DidGC(JSRuntime *rt)
 {
     FreeContextInfo();
+    NS_ASSERTION(!mJSContextInfo.ops, "FreeContextInfo didn't work");
+    PL_DHashTableInit(&mJSContextInfo, PL_DHashGetStubOps(), nsnull,
+                      sizeof(JSContextInfoEntry), 32);
 
     // Use JS_ContextIterator to figure out which contexts are still
     // live XPConnect contexts (Components property on global?).

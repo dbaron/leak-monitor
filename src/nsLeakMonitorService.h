@@ -45,6 +45,7 @@
 
 // Frozen APIs
 #include "nsISupports.h"
+#include "nsIObserver.h"
 
 // Frozen APIs that require linking against JS.
 #include "jsapi.h"
@@ -56,12 +57,13 @@
 #include "nsCOMPtr.h"
 #include "pldhash.h"
 
-class nsLeakMonitorService : public nsISupports {
+class nsLeakMonitorService : public nsIObserver {
 public:
     nsLeakMonitorService() NS_HIDDEN;
     ~nsLeakMonitorService() NS_HIDDEN;
 
     NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
 
     static nsresult Create(nsLeakMonitorService** aResult);
 
