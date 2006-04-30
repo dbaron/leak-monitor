@@ -147,6 +147,14 @@ FindXPCGCRoots(void *rp, const char *name, void *data)
 }
 
 PR_STATIC_CALLBACK(PLDHashOperator)
+ClearRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, void *arg)
+{
+    JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+    entry->rootedXPCWJSs.Clear();
+    return PL_DHASH_NEXT;
+}
+
+PR_STATIC_CALLBACK(PLDHashOperator)
 RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, void *arg)
 {
     JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
@@ -159,8 +167,6 @@ RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, voi
 nsresult
 nsLeakMonitorService::BuildContextInfo()
 {
-    nsresult rv;
-
     if (!mJSScopeInfo.ops) {
         PRBool ok = PL_DHashTableInit(&mJSScopeInfo, PL_DHashGetStubOps(),
                                       nsnull, sizeof(JSScopeInfoEntry), 32);
@@ -169,14 +175,26 @@ nsLeakMonitorService::BuildContextInfo()
 
     mGeneration = !mGeneration;
 
-    // Use JS_ContextIterator to figure out which contexts are still
-    // live XPConnect contexts (Components property on global?).
-    JSContext *cx = nsnull;
-    JSContext *random_cx = nsnull; // needed below
-    printf("Doing GC\n");
-    while (JS_ContextIterator(mJSRuntime, &cx)) {
-        random_cx = cx;
-        JSObject *global = JS_GetGlobalObject(cx);
+    nsVoidArray globalsWithNewLeaks;
+
+    PL_DHashTableEnumerate(&mJSScopeInfo, ClearRootedLists, nsnull);
+
+    JSContext *random_cx = JS_ContextIterator(mJSRuntime, &random_cx);
+    NS_ENSURE_TRUE(random_cx, NS_ERROR_UNEXPECTED);
+
+    // Find all the XPConnect wrapped JavaScript objects that are rooted
+    // (i.e., owned by native code).
+    nsVoidArray xpcGCRoots; // of JSObject*
+    JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
+
+    for (PRInt32 i = xpcGCRoots.Count() - 1; i >= 0; --i) {
+        JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
+
+        JSObject *global, *parent = rootedObj;
+        do {
+            global = parent;
+            parent = JS_GetParent(random_cx, global);
+        } while (parent);
 
         JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
             PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
@@ -187,37 +205,8 @@ nsLeakMonitorService::BuildContextInfo()
 
         jsval comp;
         entry->hasComponents =
-            JS_GetProperty(cx, global, "Components", &comp) &&
-            JS_TypeOfValue(cx, comp) == JSTYPE_OBJECT;
-
-printf("  cx=%p%s global=", cx, entry->hasComponents ? " Components" : "");
-printf("%p%s\n", global, JS_GetStringBytes(JS_ValueToString(cx, OBJECT_TO_JSVAL(global))));
-    }
-
-    PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
-
-    nsVoidArray globalsWithNewLeaks;
-
-    // Find all the XPConnect wrapped JavaScript objects that are rooted
-    // (i.e., owned by native code).
-    nsVoidArray xpcGCRoots; // of JSObject*
-    JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
-
-    for (PRInt32 i = xpcGCRoots.Count() - 1; i >= 0; --i) {
-        JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
-
-printf("Looking for global object:\n");
-        JSObject *global, *parent = rootedObj;
-        do {
-printf("  %p%s\n", parent, JS_GetStringBytes(JS_ValueToString(random_cx, OBJECT_TO_JSVAL(parent))));
-            global = parent;
-            parent = JS_GetParent(random_cx, global);
-        } while (parent);
-
-        JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
-            PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_LOOKUP));
-// XXX This isn't hitting!!!
-        NS_ENSURE_TRUE(PL_DHASH_ENTRY_IS_BUSY(entry), NS_ERROR_UNEXPECTED);
+            JS_GetProperty(random_cx, global, "Components", &comp) &&
+            JS_TypeOfValue(random_cx, comp) == JSTYPE_OBJECT;
 
         entry->rootedXPCWJSs.AppendElement(rootedObj);
         if (!entry->hasComponents && !entry->hasKnownLeaks) {
@@ -225,6 +214,8 @@ printf("  %p%s\n", parent, JS_GetStringBytes(JS_ValueToString(random_cx, OBJECT_
             globalsWithNewLeaks.AppendElement(global);
         }
     }
+
+    PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
 
     // XXX Do something with globalsWithNewLeaks!
     
