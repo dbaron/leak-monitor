@@ -48,8 +48,6 @@
 
 // Frozen APIs that require linking against JS.
 #include "jsapi.h"
-#include "jsdhash.h"
-#include "jsutil.h"
 
 // Unfrozen APIs (XXX should unroll these, per-version)
 #include "nsIJSRuntimeService.h"
@@ -78,7 +76,7 @@ private:
     void FreeContextInfo();
 
     nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
-    JSDHashTable *mJSContextInfo;
+    PLDHashTable mJSContextInfo;
 };
 
 #endif /* !defined(nsLeakMonitorService_h_) */

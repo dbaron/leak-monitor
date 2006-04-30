@@ -52,9 +52,11 @@
 
 
 nsLeakMonitorService::nsLeakMonitorService()
-  : mJSContextInfo(nsnull)
 {
     NS_ASSERTION(gService == nsnull, "duplicate service creation");
+
+    mJSContextInfo.ops = nsnull;
+
     gService = this;
 }
 
@@ -144,8 +146,8 @@ nsLeakMonitorService::DidGC(JSRuntime *rt)
 void
 nsLeakMonitorService::FreeContextInfo()
 {
-    if (mJSContextInfo) {
-        JS_DHashTableDestroy(mJSContextInfo);
-        mJSContextInfo = nsnull;
+    if (mJSContextInfo.ops) {
+        PL_DHashTableFinish(&mJSContextInfo);
+        mJSContextInfo.ops = nsnull;
     }
 }

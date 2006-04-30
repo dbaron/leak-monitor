@@ -54,7 +54,7 @@ REQUIRES	= \
 		  xpconnect \
 		  $(NULL)
 
-DEFINES		+= -DMOZILLA_STRICT_API -DXPCOM_GLUE
+DEFINES		+= -DMOZILLA_STRICT_API
 
 CPPSRCS		= \
 		nsLeakMonitorModule.cpp \
