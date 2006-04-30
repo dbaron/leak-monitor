@@ -57,6 +57,10 @@ REQUIRES	= \
 
 DEFINES		+= -DMOZILLA_STRICT_API
 
+XPIDLSRCS	= \
+		nsILeakMonitorService.idl \
+		$(NULL)
+
 CPPSRCS		= \
 		nsLeakMonitorModule.cpp \
 		nsLeakMonitorService.cpp \
