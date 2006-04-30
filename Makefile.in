@@ -44,6 +44,7 @@ VPATH		= @srcdir@
 include $(DEPTH)/config/autoconf.mk
 
 MODULE		= leak_monitor
+XPI_NAME	= leak-monitor
 DIRS		= src
 
 include $(topsrcdir)/config/rules.mk

@@ -44,9 +44,8 @@ include $(DEPTH)/config/autoconf.mk
 
 MODULE		= leak_monitor
 LIBRARY_NAME	= leakmon
-XPI_NAME	= leakmon
+XPI_NAME	= leak-monitor
 IS_COMPONENT	= 1
-NO_DIST_INSTALL	= 1
 
 REQUIRES	= \
 		  xpcom \
