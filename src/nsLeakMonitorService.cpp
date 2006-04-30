@@ -190,8 +190,8 @@ nsLeakMonitorService::BuildContextInfo()
             JS_GetProperty(cx, global, "Components", &comp) &&
             JS_TypeOfValue(cx, comp) == JSTYPE_OBJECT;
 
-        printf("  cx=%p%s\n",
-               cx, entry->hasComponents ? " Components" : "");
+printf("  cx=%p%s global=", cx, entry->hasComponents ? " Components" : "");
+printf("%p%s\n", global, JS_GetStringBytes(JS_ValueToString(cx, OBJECT_TO_JSVAL(global))));
     }
 
     PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
@@ -206,8 +206,10 @@ nsLeakMonitorService::BuildContextInfo()
     for (PRInt32 i = xpcGCRoots.Count() - 1; i >= 0; --i) {
         JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
 
+printf("Looking for global object:\n");
         JSObject *global, *parent = rootedObj;
         do {
+printf("  %p%s\n", parent, JS_GetStringBytes(JS_ValueToString(random_cx, OBJECT_TO_JSVAL(parent))));
             global = parent;
             parent = JS_GetParent(random_cx, global);
         } while (parent);
@@ -218,7 +220,7 @@ nsLeakMonitorService::BuildContextInfo()
         NS_ENSURE_TRUE(PL_DHASH_ENTRY_IS_BUSY(entry), NS_ERROR_UNEXPECTED);
 
         entry->rootedXPCWJSs.AppendElement(rootedObj);
-        if (!entry->hasKnownLeaks) {
+        if (!entry->hasComponents && !entry->hasKnownLeaks) {
             entry->hasKnownLeaks = PR_TRUE;
             globalsWithNewLeaks.AppendElement(global);
         }
