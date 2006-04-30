@@ -59,7 +59,7 @@
 #define NS_LEAKMONITOR_SERVICE_ENTRY_NAME \
     "nsLeakMonitorService"
 
-NS_GENERIC_FACTORY_CONSTRUCTOR(nsLeakMonitorService)
+NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsLeakMonitorService, Init)
 
 static NS_METHOD
 RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,

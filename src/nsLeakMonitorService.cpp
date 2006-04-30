@@ -46,6 +46,7 @@
 // XPCOM glue APIs
 #include "nsDebug.h"
 #include "nsServiceManagerUtils.h"
+#include "nsVoidArray.h"
 
 // ???
 #include "nsIAppStartupNotifier.h"
@@ -55,17 +56,19 @@
 
 
 nsLeakMonitorService::nsLeakMonitorService()
+  : mJSRuntime(nsnull)
 {
     NS_ASSERTION(gService == nsnull, "duplicate service creation");
 
-    mJSContextInfo.ops = nsnull;
-
-    gService = this;
+    mJSScopeInfo.ops = nsnull;
 }
 
 nsLeakMonitorService::~nsLeakMonitorService()
 {
-    FreeContextInfo();
+    if (mJSScopeInfo.ops) {
+        PL_DHashTableFinish(&mJSScopeInfo);
+        mJSScopeInfo.ops = nsnull;
+    }
     mJSRuntimeService = nsnull;
     gService = nsnull;
 }
@@ -83,6 +86,10 @@ nsLeakMonitorService::Observe(nsISupports *aSubject, const char *aTopic,
 nsresult
 nsLeakMonitorService::Init()
 {
+    // Prevent anyone from using CreateInstance on us.
+    NS_ENSURE_TRUE(!gService, NS_ERROR_UNEXPECTED);
+    gService = this;
+
     NS_ASSERTION(!mJSRuntimeService, "Init being called twice");
 
     nsresult rv;
@@ -91,35 +98,11 @@ nsLeakMonitorService::Init()
         do_GetService("@mozilla.org/js/xpc/RuntimeService;1", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    JSRuntime *rt;
-    rv = mJSRuntimeService->GetRuntime(&rt);
+    rv = mJSRuntimeService->GetRuntime(&mJSRuntime);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    gNextGCCallback = JS_SetGCCallbackRT(rt, GCCallback);
+    gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
 
-    return NS_OK;
-}
-
-/* static*/ nsresult
-nsLeakMonitorService::Create(nsLeakMonitorService **aResult)
-{
-    if (gService) {
-        NS_ADDREF(*aResult = gService);
-        return NS_OK;
-    }
-
-    *aResult = nsnull;
-    nsLeakMonitorService *result = new nsLeakMonitorService();
-    NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
-    NS_ADDREF(result);
-
-    nsresult rv = result->Init();
-    if (NS_FAILED(rv)) {
-        NS_RELEASE(result);
-        return rv;
-    }
-
-    *aResult = result;
     return NS_OK;
 }
 
@@ -129,42 +112,132 @@ nsLeakMonitorService::GCCallback(JSContext *cx, JSGCStatus status)
     JSBool result = gNextGCCallback ? gNextGCCallback(cx, status) : JS_TRUE;
 
     if (gService && status == JSGC_END) {
-        gService->DidGC(JS_GetRuntime(cx));
+        gService->DidGC();
     }
 
     return result;
 }
 
-struct JSContextInfoEntry : public PLDHashEntryStub {
+struct JSScopeInfoEntry : public PLDHashEntryHdr {
+    JSObject *global; // key must be first to match PLDHashEntryStub
+    PRBool hasComponents;
+    nsVoidArray rootedXPCWJSs;
+    PRPackedBool generation; // we let it wrap at one bit
+    PRPackedBool hasKnownLeaks;
 };
 
 void
-nsLeakMonitorService::DidGC(JSRuntime *rt)
+nsLeakMonitorService::DidGC()
 {
-    FreeContextInfo();
-    NS_ASSERTION(!mJSContextInfo.ops, "FreeContextInfo didn't work");
-    PL_DHashTableInit(&mJSContextInfo, PL_DHashGetStubOps(), nsnull,
-                      sizeof(JSContextInfoEntry), 32);
+    nsresult rv = BuildContextInfo();
+    NS_ASSERTION(NS_SUCCEEDED(rv), "hrm, not sure how to handle this");
+}
+
+JS_STATIC_DLL_CALLBACK(intN)
+FindXPCGCRoots(void *rp, const char *name, void *data)
+{
+    nsVoidArray *array = NS_STATIC_CAST(nsVoidArray*, data);
+
+    static const char wrapped_js_root_name[] = "nsXPCWrappedJS::mJSObj";
+    if (!strncmp(name, wrapped_js_root_name, sizeof(wrapped_js_root_name)-1)) {
+        PRBool ok = array->AppendElement(*NS_STATIC_CAST(JSObject**, rp));
+        NS_ASSERTION(ok, "not handling this out of memory case");
+    }
+    return JS_MAP_GCROOT_NEXT;
+}
+
+PR_STATIC_CALLBACK(PLDHashOperator)
+RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, void *arg)
+{
+    JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+    PRPackedBool generation = *NS_STATIC_CAST(PRPackedBool*, arg);
+    if (entry->generation != generation)
+        return PL_DHASH_REMOVE;
+    return PL_DHASH_NEXT;
+}
+
+nsresult
+nsLeakMonitorService::BuildContextInfo()
+{
+    nsresult rv;
+
+    if (!mJSScopeInfo.ops) {
+        PRBool ok = PL_DHashTableInit(&mJSScopeInfo, PL_DHashGetStubOps(),
+                                      nsnull, sizeof(JSScopeInfoEntry), 32);
+        NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+    }
+
+    mGeneration = !mGeneration;
 
     // Use JS_ContextIterator to figure out which contexts are still
     // live XPConnect contexts (Components property on global?).
-    JSContext *iter = nsnull;
-    while (JS_ContextIterator(rt, &iter)) {
-        // ...
+    JSContext *cx = nsnull;
+    JSContext *random_cx = nsnull; // needed below
+    printf("Doing GC\n");
+    while (JS_ContextIterator(mJSRuntime, &cx)) {
+        random_cx = cx;
+        JSObject *global = JS_GetGlobalObject(cx);
+
+        JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+            PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
+        NS_ENSURE_TRUE(entry, NS_ERROR_OUT_OF_MEMORY);
+
+        entry->global = global;
+        entry->generation = mGeneration;
+
+        jsval comp;
+        entry->hasComponents =
+            JS_GetProperty(cx, global, "Components", &comp) &&
+            JS_TypeOfValue(cx, comp) == JSTYPE_OBJECT;
+
+        printf("  cx=%p%s\n",
+               cx, entry->hasComponents ? " Components" : "");
     }
 
-    // XXX Use JS_MapGCRoots to find wrapped JS in each context
-    
-    // Use JS_Enumerate or JS_NewPropertyIterator to find the variables
-    // that point to wrapped natives???
+    PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
 
+    nsVoidArray globalsWithNewLeaks;
+
+    // Find all the XPConnect wrapped JavaScript objects that are rooted
+    // (i.e., owned by native code).
+    nsVoidArray xpcGCRoots; // of JSObject*
+    JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
+
+    for (PRInt32 i = xpcGCRoots.Count() - 1; i >= 0; --i) {
+        JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
+
+        JSObject *global, *parent = rootedObj;
+        do {
+            global = parent;
+            parent = JS_GetParent(random_cx, global);
+        } while (parent);
+
+        JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+            PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_LOOKUP));
+// XXX This isn't hitting!!!
+        NS_ENSURE_TRUE(PL_DHASH_ENTRY_IS_BUSY(entry), NS_ERROR_UNEXPECTED);
+
+        entry->rootedXPCWJSs.AppendElement(rootedObj);
+        if (!entry->hasKnownLeaks) {
+            entry->hasKnownLeaks = PR_TRUE;
+            globalsWithNewLeaks.AppendElement(global);
+        }
+    }
+
+    // XXX Do something with globalsWithNewLeaks!
+    
+    // XXX Use JS_Enumerate or JS_NewPropertyIterator to find the
+    // variables that point to wrapped natives???
+
+    return NS_OK;
 }
 
-void
-nsLeakMonitorService::FreeContextInfo()
+nsresult
+nsLeakMonitorService::EnsureContextInfo()
 {
-    if (mJSContextInfo.ops) {
-        PL_DHashTableFinish(&mJSContextInfo);
-        mJSContextInfo.ops = nsnull;
+    if (!mJSScopeInfo.ops) {
+        nsresult rv = BuildContextInfo();
+        NS_ENSURE_SUCCESS(rv, rv);
     }
+    return NS_OK;
 }

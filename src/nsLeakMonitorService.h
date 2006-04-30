@@ -62,23 +62,26 @@ public:
     nsLeakMonitorService() NS_HIDDEN;
     ~nsLeakMonitorService() NS_HIDDEN;
 
+    // For nsLeakMonitorModule
+    nsresult Init();
+
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
-
-    static nsresult Create(nsLeakMonitorService** aResult);
 
 private:
     static nsLeakMonitorService *gService;
     static JSGCCallback gNextGCCallback;
 
-    nsresult Init();
-
     static JSBool GCCallback(JSContext *cx, JSGCStatus status);
-    void DidGC(JSRuntime *rt);
-    void FreeContextInfo();
+    void DidGC();
+    nsresult BuildContextInfo();
+    nsresult EnsureContextInfo();
 
     nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
-    PLDHashTable mJSContextInfo;
+    JSRuntime *mJSRuntime;
+    PLDHashTable mJSScopeInfo;
+
+    PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
 };
 
 #endif /* !defined(nsLeakMonitorService_h_) */
