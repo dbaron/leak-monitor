@@ -123,7 +123,7 @@ leakmonService::Init()
 	return NS_OK;
 }
 
-/* static */ JSBool
+/* static */ JSBool JS_DLL_CALLBACK
 leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 {
 	JSBool result = gNextGCCallback ? gNextGCCallback(cx, status) : JS_TRUE;

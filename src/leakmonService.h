@@ -74,10 +74,11 @@ public:
 	NS_DECL_NSIOBSERVER
 
 private:
-	static leakmonService *gService;
-	static JSGCCallback gNextGCCallback;
+	static NS_HIDDEN_(leakmonService) *gService;
+	static NS_HIDDEN_(JSGCCallback) gNextGCCallback;
 
-	static JSBool GCCallback(JSContext *cx, JSGCStatus status);
+	static NS_HIDDEN_(JSBool) JS_DLL_CALLBACK
+		GCCallback(JSContext *cx, JSGCStatus status);
 	NS_HIDDEN_(void) DidGC();
 	NS_HIDDEN_(nsresult) BuildContextInfo();
 	NS_HIDDEN_(nsresult) EnsureContextInfo();
