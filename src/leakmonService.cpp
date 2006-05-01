@@ -43,12 +43,17 @@
 // Internal includes
 #include "leakmonService.h"
 
+// Frozen APIs
+#include "nsIWindowWatcher.h"
+#include "nsIDOMWindow.h"
+
 // XPCOM glue APIs
 #include "nsDebug.h"
 #include "nsServiceManagerUtils.h"
 #include "nsVoidArray.h"
 
-// ???
+// Unfrozen APIs that shouldn't hurt
+// filed https://bugzilla.mozilla.org/show_bug.cgi?id=335977
 #include "nsIAppStartupNotifier.h"
 
 /* static */ leakmonService* leakmonService::gService = nsnull;
@@ -219,6 +224,9 @@ leakmonService::BuildContextInfo()
 
 	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
 
+	for (PRInt32 i = 0; i < globalsWithNewLeaks.Count(); ++i) {
+		NotifyNewLeak(NS_STATIC_CAST(JSObject*, globalsWithNewLeaks[i]));
+	}
 	// XXX Do something with globalsWithNewLeaks!
 	
 	// XXX Use JS_Enumerate or JS_NewPropertyIterator to find the
@@ -234,5 +242,22 @@ leakmonService::EnsureContextInfo()
 		nsresult rv = BuildContextInfo();
 		NS_ENSURE_SUCCESS(rv, rv);
 	}
+	return NS_OK;
+}
+
+nsresult
+leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
+{
+	nsresult rv;
+
+	nsCOMPtr<nsIWindowWatcher> ww =
+		do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
+	NS_ENSURE_SUCCESS(rv, rv);
+
+	nsCOMPtr<nsIDOMWindow> win;
+	rv = ww->OpenWindow(nsnull, "chrome://leakmonitor/content/leakAlert.xul",
+	                    nsnull, nsnull, nsnull, getter_AddRefs(win));
+	NS_ENSURE_SUCCESS(rv, rv);
+
 	return NS_OK;
 }

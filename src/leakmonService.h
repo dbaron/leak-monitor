@@ -82,6 +82,8 @@ private:
 	nsresult BuildContextInfo();
 	nsresult EnsureContextInfo();
 
+	nsresult NotifyNewLeak(JSObject *aGlobalObject);
+
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
 	JSRuntime *mJSRuntime;
 	PLDHashTable mJSScopeInfo;
