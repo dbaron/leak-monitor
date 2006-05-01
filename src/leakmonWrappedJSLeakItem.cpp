@@ -43,6 +43,10 @@
 
 // Frozen APIs
 #include "jsapi.h"
+#include "jsdbgapi.h"
+
+// XPCOM glue APIs
+#include "nsStringAPI.h"
 
 leakmonWrappedJSLeakItem::leakmonWrappedJSLeakItem()
 {
@@ -67,7 +71,28 @@ leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
+	nsString result;
+
+	if (JS_ObjectIsFunction(cx, mJSObject)) {
+		JSFunction *fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL(mJSObject));
+		NS_ENSURE_TRUE(fun, NS_ERROR_UNEXPECTED);
+		JSScript *script = JS_GetFunctionScript(cx, fun);
+		NS_ENSURE_TRUE(script, NS_ERROR_UNEXPECTED);
+		
+		const char *fname = JS_GetScriptFilename(cx, script);
+		uintN startLine = JS_GetScriptBaseLineNumber(cx, script);
+		uintN endLine = startLine + JS_GetScriptLineExtent(cx, script) - 1;
+
+		char tmpbuf[256];
+		snprintf(tmpbuf, sizeof(tmpbuf), "Function at %s lines %d-%d",
+				 fname, startLine, endLine);
+		// XXX Do we know the encoding of this file name?
+		result.Append(NS_ConvertUTF8toUTF16(tmpbuf));
+	}
+
 	// XXX This can execute JS code!  How bad is that?
+	// XXX Instead, look for functions and try to find a line number?
+	// XXX Could we figure out interfaces?
 	JSString *str = JS_ValueToString(cx, OBJECT_TO_JSVAL(mJSObject));
 	NS_ENSURE_TRUE(str, NS_ERROR_OUT_OF_MEMORY);
 
@@ -75,15 +100,14 @@ leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
 	NS_ENSURE_TRUE(chars, NS_ERROR_OUT_OF_MEMORY);
 	size_t len = JS_GetStringLength(str);
 
-	PRUnichar *result = NS_STATIC_CAST(PRUnichar*,
-	                        NS_Alloc((len + 1) * sizeof(PRUnichar)));
-	NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
-
 	NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar), "char size mismatch");
-	memcpy(result, chars, len * sizeof(PRUnichar));
-	result[len] = PRUnichar(0);
+	result.Append(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
 
-	*aDescription = result;
+
+	PRUnichar *buf = ToNewUnicode(result);
+	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+
+	*aDescription = buf;
 	return NS_OK;
 }
 
