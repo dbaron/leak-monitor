@@ -67,7 +67,7 @@ public:
 	~leakmonService() NS_HIDDEN;
 
 	// For leakmonModule
-	nsresult Init();
+	NS_HIDDEN_(nsresult) Init();
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONISERVICE
@@ -78,11 +78,11 @@ private:
 	static JSGCCallback gNextGCCallback;
 
 	static JSBool GCCallback(JSContext *cx, JSGCStatus status);
-	void DidGC();
-	nsresult BuildContextInfo();
-	nsresult EnsureContextInfo();
+	NS_HIDDEN_(void) DidGC();
+	NS_HIDDEN_(nsresult) BuildContextInfo();
+	NS_HIDDEN_(nsresult) EnsureContextInfo();
 
-	nsresult NotifyNewLeak(JSObject *aGlobalObject);
+	NS_HIDDEN_(nsresult) NotifyNewLeak(JSObject *aGlobalObject);
 
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
 	JSRuntime *mJSRuntime;

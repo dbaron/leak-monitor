@@ -49,7 +49,7 @@ public:
 	~leakmonReport() NS_HIDDEN;
 
 	// For leakmonService
-	nsresult Init();
+	NS_HIDDEN_(nsresult) Init();
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIREPORT
