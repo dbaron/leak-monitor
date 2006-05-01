@@ -59,11 +59,13 @@ REQUIRES	= \
 DEFINES		+= -DMOZILLA_STRICT_API
 
 XPIDLSRCS	= \
+		leakmonIReport.idl \
 		leakmonIService.idl \
 		$(NULL)
 
 CPPSRCS		= \
 		leakmonModule.cpp \
+		leakmonReport.cpp \
 		leakmonService.cpp \
 		$(NULL)
 
