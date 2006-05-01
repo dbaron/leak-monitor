@@ -61,6 +61,7 @@ DEFINES		+= -DMOZILLA_STRICT_API
 XPIDLSRCS	= \
 		leakmonIReport.idl \
 		leakmonIService.idl \
+		leakmonIWrappedJSLeakItem.idl \
 		$(NULL)
 
 CPPSRCS		= \

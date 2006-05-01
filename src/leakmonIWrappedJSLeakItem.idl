@@ -37,12 +37,8 @@
 
 #include "nsISupports.idl"
 
-interface leakmonIWrappedJSLeakItem;
-
-[scriptable, uuid(b1d09325-1558-4243-93d6-b2d072faab8b)]
-interface leakmonIReport : nsISupports
+[scriptable, uuid(cc549b31-6136-4cfb-b825-c56889d0fb34)]
+interface leakmonIWrappedJSLeakItem : nsISupports
 {
-	void getLeakedWrappedJSs(out unsigned long itemCount,
-	                         [retval, array, size_is(itemCount)]
-	                             out leakmonIWrappedJSLeakItem items);
+	readonly attribute string description;
 };
