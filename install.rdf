@@ -41,13 +41,13 @@
 
 	<Description about="urn:mozilla:install-manifest">
 		<em:id>{1ed6b678-1f93-4660-a9c5-01af87b323d3}</em:id>
-		<em:version>0.1</em:version>
+#expand 		<em:version>__EXTENSION_VERSION__</em:version>
 		
 		<!-- Firefox -->
 		<em:targetApplication>
 			<Description>
 				<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-				<em:minVersion>3.0</em:minVersion>
+#expand 				<em:minVersion>__FIREFOX_VERSION__</em:minVersion>
 				<em:maxVersion>3.0</em:maxVersion>
 			</Description>
 		</em:targetApplication>

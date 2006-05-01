@@ -57,4 +57,9 @@ DIST_FILES	= \
 		install.rdf \
 		$(NULL)
 
+XULAPP_DEFINES	= \
+		-DEXTENSION_VERSION=$(EXTENSION_VERSION) \
+		-DFIREFOX_VERSION=$(FIREFOX_VERSION) \
+		$(NULL)
+
 include $(topsrcdir)/config/rules.mk
