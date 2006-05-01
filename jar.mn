@@ -1,0 +1,4 @@
+# vim: set shiftwidth=45 tabstop=45 autoindent noexpandtab copyindent:
+leakmon.jar:
+% content leakmonitor %content/
+  content/leakAlert.xul

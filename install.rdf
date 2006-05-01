@@ -58,5 +58,11 @@
 		<em:description>Warn when chrome windows close but leave other code pointing at their JavaScript objects.</em:description>
 		<em:creator>L. David Baron</em:creator>
 		<em:homepageURL>http://dbaron.org/</em:homepageURL>
+
+		<em:file>
+			<Description about="urn:mozilla:extension:file:leakmon.jar">
+				<em:package>content/leakmonitor/</em:package>
+			</Description>
+		</em:file>
 	</Description>
 </RDF>
