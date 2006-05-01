@@ -186,7 +186,8 @@ leakmonService::BuildContextInfo()
 
 	PL_DHashTableEnumerate(&mJSScopeInfo, ClearRootedLists, nsnull);
 
-	JSContext *random_cx = JS_ContextIterator(mJSRuntime, &random_cx);
+	JSContext *random_cx = nsnull;
+	JS_ContextIterator(mJSRuntime, &random_cx);
 	NS_ENSURE_TRUE(random_cx, NS_ERROR_UNEXPECTED);
 
 	// Find all the XPConnect wrapped JavaScript objects that are rooted
