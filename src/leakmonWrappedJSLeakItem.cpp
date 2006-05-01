@@ -35,10 +35,55 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsISupports.idl"
+/* A report of the leaks in a JavaScript scope. */
 
-[scriptable, uuid(cc549b31-6136-4cfb-b825-c56889d0fb34)]
-interface leakmonIWrappedJSLeakItem : nsISupports
+// Internal includes
+#include "leakmonWrappedJSLeakItem.h"
+#include "leakmonService.h"
+
+// Frozen APIs
+#include "jsapi.h"
+
+leakmonWrappedJSLeakItem::leakmonWrappedJSLeakItem()
 {
-	readonly attribute wstring description;
-};
+}
+
+leakmonWrappedJSLeakItem::~leakmonWrappedJSLeakItem()
+{
+}
+
+NS_IMPL_ISUPPORTS1(leakmonWrappedJSLeakItem, leakmonIWrappedJSLeakItem)
+
+nsresult
+leakmonWrappedJSLeakItem::Init(JSObject* aJSObject)
+{
+	mJSObject = aJSObject;
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
+{
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
+	// XXX This can execute JS code!  How bad is that?
+	JSString *str = JS_ValueToString(cx, OBJECT_TO_JSVAL(mJSObject));
+	NS_ENSURE_TRUE(str, NS_ERROR_OUT_OF_MEMORY);
+
+	jschar *chars = JS_GetStringChars(str);
+	NS_ENSURE_TRUE(chars, NS_ERROR_OUT_OF_MEMORY);
+	size_t len = JS_GetStringLength(str);
+
+	PRUnichar *result = NS_STATIC_CAST(PRUnichar*,
+	                        NS_Alloc((len + 1) * sizeof(PRUnichar)));
+	NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
+
+	NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar), "char size mismatch");
+	memcpy(result, chars, len * sizeof(PRUnichar));
+	result[len] = PRUnichar(0);
+
+	*aDescription = result;
+	return NS_OK;
+}
+

@@ -35,10 +35,29 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsISupports.idl"
+/* A report of the leaks in a JavaScript scope. */
 
-[scriptable, uuid(cc549b31-6136-4cfb-b825-c56889d0fb34)]
-interface leakmonIWrappedJSLeakItem : nsISupports
-{
-	readonly attribute wstring description;
+#ifndef leakmonWrappedJSLeakItem_h_
+#define leakmonWrappedJSLeakItem_h_
+
+// Code within this extension
+#include "leakmonIWrappedJSLeakItem.h"
+
+struct JSObject;
+
+class leakmonWrappedJSLeakItem : public leakmonIWrappedJSLeakItem {
+public:
+	leakmonWrappedJSLeakItem() NS_HIDDEN;
+	~leakmonWrappedJSLeakItem() NS_HIDDEN;
+
+	// For leakmonReport
+	NS_HIDDEN_(nsresult) Init(JSObject *aJSObject);
+
+	NS_DECL_ISUPPORTS
+	NS_DECL_LEAKMONIWRAPPEDJSLEAKITEM
+
+private:
+	JSObject* mJSObject;
 };
+
+#endif /* !defined(leakmonWrappedJSLeakItem_h_) */

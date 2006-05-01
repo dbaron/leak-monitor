@@ -43,18 +43,22 @@
 // Code within this extension
 #include "leakmonIReport.h"
 
+// XPCOM glue APIs
+#include "nsVoidArray.h"
+
 class leakmonReport : public leakmonIReport {
 public:
 	leakmonReport() NS_HIDDEN;
 	~leakmonReport() NS_HIDDEN;
 
 	// For leakmonService
-	NS_HIDDEN_(nsresult) Init();
+	NS_HIDDEN_(nsresult) Init(const nsVoidArray &aLeakedWrappedJSObjects);
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIREPORT
 
 private:
+	nsVoidArray mLeakedWrappedJSObjects;
 };
 
 #endif /* !defined(leakmonReport_h_) */

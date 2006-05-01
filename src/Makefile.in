@@ -68,6 +68,7 @@ CPPSRCS		= \
 		leakmonModule.cpp \
 		leakmonReport.cpp \
 		leakmonService.cpp \
+		leakmonWrappedJSLeakItem.cpp \
 		$(NULL)
 
 EXTRA_DSO_LDOPTS = \

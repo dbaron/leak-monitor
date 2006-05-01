@@ -42,6 +42,7 @@
 
 // Internal includes
 #include "leakmonService.h"
+#include "leakmonReport.h"
 
 // Frozen APIs
 #include "nsIWindowWatcher.h"
@@ -261,9 +262,19 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 		do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
 	NS_ENSURE_SUCCESS(rv, rv);
 
+	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+		PL_DHashTableOperate(&mJSScopeInfo, aGlobalObject, PL_DHASH_LOOKUP));
+	NS_ASSERTION(PL_DHASH_ENTRY_IS_BUSY(entry), "entry not in hashtable");
+
+	leakmonReport *report = new leakmonReport();
+	NS_ENSURE_TRUE(report, NS_ERROR_OUT_OF_MEMORY);
+	nsCOMPtr<leakmonIReport> reportI = report;
+	rv = report->Init(entry->rootedXPCWJSs);
+	NS_ENSURE_SUCCESS(rv, rv);
+
 	nsCOMPtr<nsIDOMWindow> win;
 	rv = ww->OpenWindow(nsnull, "chrome://leakmonitor/content/leakAlert.xul",
-	                    nsnull, nsnull, nsnull, getter_AddRefs(win));
+	                    nsnull, nsnull, report, getter_AddRefs(win));
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	return NS_OK;

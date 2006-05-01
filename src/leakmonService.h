@@ -73,6 +73,12 @@ public:
 	NS_DECL_LEAKMONISERVICE
 	NS_DECL_NSIOBSERVER
 
+	static inline NS_HIDDEN_(JSContext*) GetJSContext() {
+		if (!gService)
+			return nsnull;
+		return gService->mJSContext;
+	}
+
 private:
 	static NS_HIDDEN_(leakmonService) *gService;
 	static NS_HIDDEN_(JSGCCallback) gNextGCCallback;
