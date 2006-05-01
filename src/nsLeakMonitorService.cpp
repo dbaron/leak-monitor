@@ -73,7 +73,9 @@ nsLeakMonitorService::~nsLeakMonitorService()
 	gService = nsnull;
 }
 
-NS_IMPL_ISUPPORTS1(nsLeakMonitorService, nsIObserver)
+NS_IMPL_ISUPPORTS2(nsLeakMonitorService,
+                   nsILeakMonitorService,
+                   nsIObserver)
 
 NS_IMETHODIMP
 nsLeakMonitorService::Observe(nsISupports *aSubject, const char *aTopic,

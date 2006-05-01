@@ -43,6 +43,9 @@
 #ifndef nsLeakMonitorService_h_
 #define nsLeakMonitorService_h_
 
+// Code within this extension
+#include "nsILeakMonitorService.h"
+
 // Frozen APIs
 #include "nsISupports.h"
 #include "nsIObserver.h"
@@ -57,7 +60,8 @@
 #include "nsCOMPtr.h"
 #include "pldhash.h"
 
-class nsLeakMonitorService : public nsIObserver {
+class nsLeakMonitorService : public nsILeakMonitorService,
+                             public nsIObserver {
 public:
 	nsLeakMonitorService() NS_HIDDEN;
 	~nsLeakMonitorService() NS_HIDDEN;
@@ -66,6 +70,7 @@ public:
 	nsresult Init();
 
 	NS_DECL_ISUPPORTS
+	NS_DECL_NSILEAKMONITORSERVICE
 	NS_DECL_NSIOBSERVER
 
 private:
