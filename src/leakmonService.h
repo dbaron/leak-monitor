@@ -86,6 +86,9 @@ private:
 
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
 	JSRuntime *mJSRuntime;
+	JSContext *mJSContext; // some JS API functions require a context, and
+	                       // it seems safer to have our own than pass
+	                       // somebody else's.
 	PLDHashTable mJSScopeInfo;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed

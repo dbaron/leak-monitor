@@ -74,7 +74,14 @@ leakmonService::~leakmonService()
 		PL_DHashTableFinish(&mJSScopeInfo);
 		mJSScopeInfo.ops = nsnull;
 	}
+
+	if (mJSContext) {
+		JS_DestroyContext(mJSContext);
+		mJSContext = nsnull;
+	}
+
 	mJSRuntimeService = nsnull;
+
 	gService = nsnull;
 }
 
@@ -107,6 +114,9 @@ leakmonService::Init()
 
 	rv = mJSRuntimeService->GetRuntime(&mJSRuntime);
 	NS_ENSURE_SUCCESS(rv, rv);
+
+	mJSContext = JS_NewContext(mJSRuntime, 256);
+	NS_ENSURE_TRUE(mJSContext, NS_ERROR_OUT_OF_MEMORY);
 
 	gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
 
@@ -186,10 +196,6 @@ leakmonService::BuildContextInfo()
 
 	PL_DHashTableEnumerate(&mJSScopeInfo, ClearRootedLists, nsnull);
 
-	JSContext *random_cx = nsnull;
-	JS_ContextIterator(mJSRuntime, &random_cx);
-	NS_ENSURE_TRUE(random_cx, NS_ERROR_UNEXPECTED);
-
 	// Find all the XPConnect wrapped JavaScript objects that are rooted
 	// (i.e., owned by native code).
 	nsVoidArray xpcGCRoots; // of JSObject*
@@ -201,7 +207,7 @@ leakmonService::BuildContextInfo()
 		JSObject *global, *parent = rootedObj;
 		do {
 			global = parent;
-			parent = JS_GetParent(random_cx, global);
+			parent = JS_GetParent(mJSContext, global);
 		} while (parent);
 
 		JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
@@ -213,8 +219,8 @@ leakmonService::BuildContextInfo()
 
 		jsval comp;
 		entry->hasComponents =
-			JS_GetProperty(random_cx, global, "Components", &comp) &&
-			JS_TypeOfValue(random_cx, comp) == JSTYPE_OBJECT;
+			JS_GetProperty(mJSContext, global, "Components", &comp) &&
+			JS_TypeOfValue(mJSContext, comp) == JSTYPE_OBJECT;
 
 		entry->rootedXPCWJSs.AppendElement(rootedObj);
 		if (!entry->hasComponents && !entry->hasKnownLeaks) {
