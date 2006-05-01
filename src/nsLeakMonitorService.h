@@ -1,4 +1,4 @@
-/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+/* vim: set shiftwidth=4 tabstop=4 autoindent cindent noexpandtab copyindent: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -59,29 +59,29 @@
 
 class nsLeakMonitorService : public nsIObserver {
 public:
-    nsLeakMonitorService() NS_HIDDEN;
-    ~nsLeakMonitorService() NS_HIDDEN;
+	nsLeakMonitorService() NS_HIDDEN;
+	~nsLeakMonitorService() NS_HIDDEN;
 
-    // For nsLeakMonitorModule
-    nsresult Init();
+	// For nsLeakMonitorModule
+	nsresult Init();
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
+	NS_DECL_ISUPPORTS
+	NS_DECL_NSIOBSERVER
 
 private:
-    static nsLeakMonitorService *gService;
-    static JSGCCallback gNextGCCallback;
+	static nsLeakMonitorService *gService;
+	static JSGCCallback gNextGCCallback;
 
-    static JSBool GCCallback(JSContext *cx, JSGCStatus status);
-    void DidGC();
-    nsresult BuildContextInfo();
-    nsresult EnsureContextInfo();
+	static JSBool GCCallback(JSContext *cx, JSGCStatus status);
+	void DidGC();
+	nsresult BuildContextInfo();
+	nsresult EnsureContextInfo();
 
-    nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
-    JSRuntime *mJSRuntime;
-    PLDHashTable mJSScopeInfo;
+	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
+	JSRuntime *mJSRuntime;
+	PLDHashTable mJSScopeInfo;
 
-    PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
+	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
 };
 
 #endif /* !defined(nsLeakMonitorService_h_) */

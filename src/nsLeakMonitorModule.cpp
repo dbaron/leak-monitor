@@ -1,4 +1,4 @@
-/* vim: set shiftwidth=4 tabstop=8 autoindent cindent expandtab: */
+/* vim: set shiftwidth=4 tabstop=4 autoindent cindent noexpandtab copyindent: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -51,13 +51,13 @@
 // 1ee1b3fc-e896-4ac9-870f-43d3a0581dc8
 #define NS_LEAKMONITOR_SERVICE_CID \
 { 0x1ee1b3fc, 0xe896, 0x4ac9, \
-    { 0x87, 0x0f, 0x43, 0xd3, 0xa0, 0x58, 0x1d, 0xc8 } }
+	{ 0x87, 0x0f, 0x43, 0xd3, 0xa0, 0x58, 0x1d, 0xc8 } }
 
 #define NS_LEAKMONITOR_SERVICE_CONTRACTID \
-    "@dbaron.org/leak-monitor-service;1"
+	"@dbaron.org/leak-monitor-service;1"
 
 #define NS_LEAKMONITOR_SERVICE_ENTRY_NAME \
-    "nsLeakMonitorService"
+	"nsLeakMonitorService"
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsLeakMonitorService, Init)
 
@@ -66,26 +66,26 @@ RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
                           const char *aLoaderStr, const char *aType,
                           const nsModuleComponentInfo *aInfo)
 {
-    nsresult rv;
-    nsCOMPtr<nsICategoryManager> catMan =
-        do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+	nsresult rv;
+	nsCOMPtr<nsICategoryManager> catMan =
+		do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+	NS_ENSURE_SUCCESS(rv, rv);
 
-    const char service[] = "service,";
-    // sizeof() includes room for terminating null
-    char *value = NS_STATIC_CAST(char*,
-        NS_Alloc(sizeof(service) + strlen(aInfo->mContractID)));
-    if (!value)
-        return NS_ERROR_OUT_OF_MEMORY;
-    strcpy(value, service);
-    strcat(value, aInfo->mContractID);
-    rv = catMan->AddCategoryEntry(APPSTARTUP_CATEGORY,
-                                  aInfo->mContractID, value,
-                                  PR_TRUE, PR_TRUE, nsnull);
-    NS_Free(value);
-    NS_ENSURE_SUCCESS(rv, rv);
+	const char service[] = "service,";
+	// sizeof() includes room for terminating null
+	char *value = NS_STATIC_CAST(char*,
+		NS_Alloc(sizeof(service) + strlen(aInfo->mContractID)));
+	if (!value)
+		return NS_ERROR_OUT_OF_MEMORY;
+	strcpy(value, service);
+	strcat(value, aInfo->mContractID);
+	rv = catMan->AddCategoryEntry(APPSTARTUP_CATEGORY,
+	                              aInfo->mContractID, value,
+	                              PR_TRUE, PR_TRUE, nsnull);
+	NS_Free(value);
+	NS_ENSURE_SUCCESS(rv, rv);
 
-    return NS_OK;
+	return NS_OK;
 }
 
 static NS_METHOD
@@ -93,28 +93,28 @@ UnregisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile *aPath,
                             const char *aLoaderStr,
                             const nsModuleComponentInfo *aInfo)
 {
-    nsresult rv;
-    nsCOMPtr<nsICategoryManager> catMan =
-        do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+	nsresult rv;
+	nsCOMPtr<nsICategoryManager> catMan =
+		do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+	NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = catMan->DeleteCategoryEntry(APPSTARTUP_CATEGORY,
-                                     aInfo->mContractID,
-                                     PR_TRUE);
-    NS_ENSURE_SUCCESS(rv, rv);
+	rv = catMan->DeleteCategoryEntry(APPSTARTUP_CATEGORY,
+	                                 aInfo->mContractID,
+	                                 PR_TRUE);
+	NS_ENSURE_SUCCESS(rv, rv);
 
-    return NS_OK;
+	return NS_OK;
 }
 
 
 static const nsModuleComponentInfo components[] =
 {
   { "nsLeakMonitorService",
-    NS_LEAKMONITOR_SERVICE_CID,
-    NS_LEAKMONITOR_SERVICE_CONTRACTID,
-    nsLeakMonitorServiceConstructor,
-    RegisterServiceForStartup,
-    UnregisterServiceForStartup
+	NS_LEAKMONITOR_SERVICE_CID,
+	NS_LEAKMONITOR_SERVICE_CONTRACTID,
+	nsLeakMonitorServiceConstructor,
+	RegisterServiceForStartup,
+	UnregisterServiceForStartup
   }
 };
 
