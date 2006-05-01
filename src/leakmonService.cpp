@@ -228,9 +228,9 @@ leakmonService::BuildContextInfo()
 	for (PRInt32 i = 0; i < globalsWithNewLeaks.Count(); ++i) {
 		NotifyNewLeak(NS_STATIC_CAST(JSObject*, globalsWithNewLeaks[i]));
 	}
-	// XXX Do something with globalsWithNewLeaks!
 	
-	// XXX Use JS_Enumerate or JS_NewPropertyIterator to find the
+	// XXX Look at wrapped natives too, perhaps?
+	// Maybe use JS_Enumerate or JS_NewPropertyIterator to find the
 	// variables that point to wrapped natives???
 
 	return NS_OK;
