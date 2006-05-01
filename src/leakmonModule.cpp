@@ -36,7 +36,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 // Internal includes
-#include "nsLeakMonitorService.h"
+#include "leakmonService.h"
 
 // Frozen APIs
 #include "nsICategoryManager.h"
@@ -57,9 +57,9 @@
 	"@dbaron.org/leak-monitor-service;1"
 
 #define NS_LEAKMONITOR_SERVICE_ENTRY_NAME \
-	"nsLeakMonitorService"
+	"leakmonService"
 
-NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsLeakMonitorService, Init)
+NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(leakmonService, Init)
 
 static NS_METHOD
 RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
@@ -109,13 +109,13 @@ UnregisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile *aPath,
 
 static const nsModuleComponentInfo components[] =
 {
-  { "nsLeakMonitorService",
+  { "leakmonService",
 	NS_LEAKMONITOR_SERVICE_CID,
 	NS_LEAKMONITOR_SERVICE_CONTRACTID,
-	nsLeakMonitorServiceConstructor,
+	leakmonServiceConstructor,
 	RegisterServiceForStartup,
 	UnregisterServiceForStartup
   }
 };
 
-NS_IMPL_NSGETMODULE(nsLeakMonitorModule, components)
+NS_IMPL_NSGETMODULE(leakmonModule, components)

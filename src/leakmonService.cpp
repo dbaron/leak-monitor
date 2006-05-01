@@ -41,7 +41,7 @@
  */
 
 // Internal includes
-#include "nsLeakMonitorService.h"
+#include "leakmonService.h"
 
 // XPCOM glue APIs
 #include "nsDebug.h"
@@ -51,11 +51,11 @@
 // ???
 #include "nsIAppStartupNotifier.h"
 
-/* static */ nsLeakMonitorService* nsLeakMonitorService::gService = nsnull;
-/* static */ JSGCCallback nsLeakMonitorService::gNextGCCallback = nsnull;
+/* static */ leakmonService* leakmonService::gService = nsnull;
+/* static */ JSGCCallback leakmonService::gNextGCCallback = nsnull;
 
 
-nsLeakMonitorService::nsLeakMonitorService()
+leakmonService::leakmonService()
   : mJSRuntime(nsnull)
 {
 	NS_ASSERTION(gService == nsnull, "duplicate service creation");
@@ -63,7 +63,7 @@ nsLeakMonitorService::nsLeakMonitorService()
 	mJSScopeInfo.ops = nsnull;
 }
 
-nsLeakMonitorService::~nsLeakMonitorService()
+leakmonService::~leakmonService()
 {
 	if (mJSScopeInfo.ops) {
 		PL_DHashTableFinish(&mJSScopeInfo);
@@ -73,20 +73,20 @@ nsLeakMonitorService::~nsLeakMonitorService()
 	gService = nsnull;
 }
 
-NS_IMPL_ISUPPORTS2(nsLeakMonitorService,
-                   nsILeakMonitorService,
+NS_IMPL_ISUPPORTS2(leakmonService,
+                   leakmonIService,
                    nsIObserver)
 
 NS_IMETHODIMP
-nsLeakMonitorService::Observe(nsISupports *aSubject, const char *aTopic,
-                              const PRUnichar *aData)
+leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
+                        const PRUnichar *aData)
 {
 	NS_ASSERTION(!strcmp(aTopic, APPSTARTUP_TOPIC), "bad topic");
 	return NS_OK;
 }
 
 nsresult
-nsLeakMonitorService::Init()
+leakmonService::Init()
 {
 	// Prevent anyone from using CreateInstance on us.
 	NS_ENSURE_TRUE(!gService, NS_ERROR_UNEXPECTED);
@@ -109,7 +109,7 @@ nsLeakMonitorService::Init()
 }
 
 /* static */ JSBool
-nsLeakMonitorService::GCCallback(JSContext *cx, JSGCStatus status)
+leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 {
 	JSBool result = gNextGCCallback ? gNextGCCallback(cx, status) : JS_TRUE;
 
@@ -129,7 +129,7 @@ struct JSScopeInfoEntry : public PLDHashEntryHdr {
 };
 
 void
-nsLeakMonitorService::DidGC()
+leakmonService::DidGC()
 {
 	nsresult rv = BuildContextInfo();
 	NS_ASSERTION(NS_SUCCEEDED(rv), "hrm, not sure how to handle this");
@@ -167,7 +167,7 @@ RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, voi
 }
 
 nsresult
-nsLeakMonitorService::BuildContextInfo()
+leakmonService::BuildContextInfo()
 {
 	if (!mJSScopeInfo.ops) {
 		PRBool ok = PL_DHashTableInit(&mJSScopeInfo, PL_DHashGetStubOps(),
@@ -228,7 +228,7 @@ nsLeakMonitorService::BuildContextInfo()
 }
 
 nsresult
-nsLeakMonitorService::EnsureContextInfo()
+leakmonService::EnsureContextInfo()
 {
 	if (!mJSScopeInfo.ops) {
 		nsresult rv = BuildContextInfo();

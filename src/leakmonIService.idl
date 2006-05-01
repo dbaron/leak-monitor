@@ -35,58 +35,9 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/*
- * service that monitors the state of wrapped JS objects at each GC,
- * particularly to find those in closed windows
- */
+#include "nsISupports.idl"
 
-#ifndef nsLeakMonitorService_h_
-#define nsLeakMonitorService_h_
-
-// Code within this extension
-#include "nsILeakMonitorService.h"
-
-// Frozen APIs
-#include "nsISupports.h"
-#include "nsIObserver.h"
-
-// Frozen APIs that require linking against JS.
-#include "jsapi.h"
-
-// Unfrozen APIs (XXX should unroll these, per-version)
-#include "nsIJSRuntimeService.h"
-
-// XPCOM glue APIs
-#include "nsCOMPtr.h"
-#include "pldhash.h"
-
-class nsLeakMonitorService : public nsILeakMonitorService,
-                             public nsIObserver {
-public:
-	nsLeakMonitorService() NS_HIDDEN;
-	~nsLeakMonitorService() NS_HIDDEN;
-
-	// For nsLeakMonitorModule
-	nsresult Init();
-
-	NS_DECL_ISUPPORTS
-	NS_DECL_NSILEAKMONITORSERVICE
-	NS_DECL_NSIOBSERVER
-
-private:
-	static nsLeakMonitorService *gService;
-	static JSGCCallback gNextGCCallback;
-
-	static JSBool GCCallback(JSContext *cx, JSGCStatus status);
-	void DidGC();
-	nsresult BuildContextInfo();
-	nsresult EnsureContextInfo();
-
-	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
-	JSRuntime *mJSRuntime;
-	PLDHashTable mJSScopeInfo;
-
-	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
+[scriptable, uuid(03151c5c-6203-405f-8bd7-72406176e480)]
+interface leakmonIService : nsISupports
+{
 };
-
-#endif /* !defined(nsLeakMonitorService_h_) */
