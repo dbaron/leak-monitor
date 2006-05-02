@@ -638,22 +638,6 @@ void nsVoidArray::Compact()
   }
 }
 
-// Needed because we want to pass the pointer to the item in the array
-// to the comparator function, not a pointer to the pointer in the array.
-struct VoidArrayComparatorContext {
-  nsVoidArrayComparatorFunc mComparatorFunc;
-  void* mData;
-};
-
-PR_STATIC_CALLBACK(int)
-VoidArrayComparator(const void* aElement1, const void* aElement2, void* aData)
-{
-  VoidArrayComparatorContext* ctx = NS_STATIC_CAST(VoidArrayComparatorContext*, aData);
-  return (*ctx->mComparatorFunc)(*NS_STATIC_CAST(void* const*, aElement1),
-                                 *NS_STATIC_CAST(void* const*, aElement2),
-                                  ctx->mData);
-}
-
 PRBool nsVoidArray::EnumerateForwards(nsVoidArrayEnumFunc aFunc, void* aData)
 {
   PRInt32 index = -1;
