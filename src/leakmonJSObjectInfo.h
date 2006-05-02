@@ -37,27 +37,27 @@
 
 /* A report of the leaks in a JavaScript scope. */
 
-#ifndef leakmonWrappedJSLeakItem_h_
-#define leakmonWrappedJSLeakItem_h_
+#ifndef leakmonJSObjectInfo_h_
+#define leakmonJSObjectInfo_h_
 
 // Code within this extension
-#include "leakmonIWrappedJSLeakItem.h"
+#include "leakmonIJSObjectInfo.h"
 
 // XPCOM glue APIs
 #include "nsStringAPI.h"
 
 struct JSObject;
 
-class leakmonWrappedJSLeakItem : public leakmonIWrappedJSLeakItem {
+class leakmonJSObjectInfo : public leakmonIJSObjectInfo {
 public:
-	leakmonWrappedJSLeakItem() NS_HIDDEN;
-	~leakmonWrappedJSLeakItem() NS_HIDDEN;
+	leakmonJSObjectInfo() NS_HIDDEN;
+	~leakmonJSObjectInfo() NS_HIDDEN;
 
 	// For leakmonReport
 	NS_HIDDEN_(nsresult) Init(JSObject *aJSObject);
 
 	NS_DECL_ISUPPORTS
-	NS_DECL_LEAKMONIWRAPPEDJSLEAKITEM
+	NS_DECL_LEAKMONIJSOBJECTINFO
 
 private:
 	JSObject* mJSObject;
@@ -68,4 +68,4 @@ private:
 	nsString mString;
 };
 
-#endif /* !defined(leakmonWrappedJSLeakItem_h_) */
+#endif /* !defined(leakmonJSObjectInfo_h_) */

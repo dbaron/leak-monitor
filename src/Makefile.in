@@ -61,14 +61,14 @@ DEFINES		+= -DMOZILLA_STRICT_API
 XPIDLSRCS	= \
 		leakmonIReport.idl \
 		leakmonIService.idl \
-		leakmonIWrappedJSLeakItem.idl \
+		leakmonIJSObjectInfo.idl \
 		$(NULL)
 
 CPPSRCS		= \
 		leakmonModule.cpp \
 		leakmonReport.cpp \
 		leakmonService.cpp \
-		leakmonWrappedJSLeakItem.cpp \
+		leakmonJSObjectInfo.cpp \
 		$(NULL)
 
 EXTRA_DSO_LDOPTS = \

@@ -38,25 +38,25 @@
 /* A report of the leaks in a JavaScript scope. */
 
 // Internal includes
-#include "leakmonWrappedJSLeakItem.h"
+#include "leakmonJSObjectInfo.h"
 #include "leakmonService.h"
 
 // Frozen APIs
 #include "jsapi.h"
 #include "jsdbgapi.h"
 
-leakmonWrappedJSLeakItem::leakmonWrappedJSLeakItem()
+leakmonJSObjectInfo::leakmonJSObjectInfo()
 {
 }
 
-leakmonWrappedJSLeakItem::~leakmonWrappedJSLeakItem()
+leakmonJSObjectInfo::~leakmonJSObjectInfo()
 {
 }
 
-NS_IMPL_ISUPPORTS1(leakmonWrappedJSLeakItem, leakmonIWrappedJSLeakItem)
+NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 
 nsresult
-leakmonWrappedJSLeakItem::Init(JSObject* aJSObject)
+leakmonJSObjectInfo::Init(JSObject* aJSObject)
 {
 	mJSObject = aJSObject;
 
@@ -98,7 +98,7 @@ leakmonWrappedJSLeakItem::Init(JSObject* aJSObject)
 }
 
 NS_IMETHODIMP
-leakmonWrappedJSLeakItem::GetFileName(PRUnichar **aResult)
+leakmonJSObjectInfo::GetFileName(PRUnichar **aResult)
 {
 	PRUnichar *buf = ToNewUnicode(mFileName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
@@ -107,21 +107,21 @@ leakmonWrappedJSLeakItem::GetFileName(PRUnichar **aResult)
 }
 
 NS_IMETHODIMP
-leakmonWrappedJSLeakItem::GetLineStart(PRUint32 *aResult)
+leakmonJSObjectInfo::GetLineStart(PRUint32 *aResult)
 {
 	*aResult = mLineStart;
 	return NS_OK;
 }
 
 NS_IMETHODIMP
-leakmonWrappedJSLeakItem::GetLineEnd(PRUint32 *aResult)
+leakmonJSObjectInfo::GetLineEnd(PRUint32 *aResult)
 {
 	*aResult = mLineEnd;
 	return NS_OK;
 }
 
 NS_IMETHODIMP
-leakmonWrappedJSLeakItem::GetStringRep(PRUnichar **aResult)
+leakmonJSObjectInfo::GetStringRep(PRUnichar **aResult)
 {
 	PRUnichar *buf = ToNewUnicode(mString);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);

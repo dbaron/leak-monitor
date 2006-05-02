@@ -39,7 +39,7 @@
 
 // Internal includes
 #include "leakmonReport.h"
-#include "leakmonWrappedJSLeakItem.h"
+#include "leakmonJSObjectInfo.h"
 
 // XPCOM glue APIs
 #include "nsMemory.h"
@@ -66,7 +66,7 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 
 NS_IMETHODIMP
 leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
-                                   leakmonIWrappedJSLeakItem ***aItems)
+                                   leakmonIJSObjectInfo ***aItems)
 {
 	PRInt32 count = mLeakedWrappedJSObjects.Count();
 	if (count == 0) {
@@ -75,15 +75,15 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 		return NS_OK;
 	}
 
-	leakmonIWrappedJSLeakItem **array =
-		NS_STATIC_CAST(leakmonIWrappedJSLeakItem**,
-			NS_Alloc(count * sizeof(leakmonIWrappedJSLeakItem*)));
+	leakmonIJSObjectInfo **array =
+		NS_STATIC_CAST(leakmonIJSObjectInfo**,
+			NS_Alloc(count * sizeof(leakmonIJSObjectInfo*)));
 	NS_ENSURE_TRUE(array, NS_ERROR_OUT_OF_MEMORY);
 
-	memset(array, 0, count * sizeof(leakmonIWrappedJSLeakItem*));
+	memset(array, 0, count * sizeof(leakmonIJSObjectInfo*));
 
 	for (PRInt32 i = 0; i < count; ++i) {
-		leakmonWrappedJSLeakItem *item = new leakmonWrappedJSLeakItem;
+		leakmonJSObjectInfo *item = new leakmonJSObjectInfo;
 		nsresult rv;
 		if (item) {
 			rv = item->Init(NS_STATIC_CAST(JSObject*,
