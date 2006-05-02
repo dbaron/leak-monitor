@@ -59,8 +59,13 @@ function LeakAlertOnUnload()
 
 function JSObjectRecord(lwjs)
 {
-	this.setColumnPropertyName("main", "description");
-	this.description = lwjs.description;
+	this.setColumnPropertyName("string", "stringRep");
+	this.setColumnPropertyName("filename", "fileName");
+	this.setColumnPropertyName("linestart", "lineStart");
+	this.setColumnPropertyName("lineend", "lineEnd");
+	for each (var m in ["fileName", "lineStart", "lineEnd", "stringRep"]) {
+		this[m] = lwjs[m];
+	}
 }
 
 JSObjectRecord.prototype = new XULTreeViewRecord(gTreeView.share);

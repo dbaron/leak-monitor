@@ -45,9 +45,6 @@
 #include "jsapi.h"
 #include "jsdbgapi.h"
 
-// XPCOM glue APIs
-#include "nsStringAPI.h"
-
 leakmonWrappedJSLeakItem::leakmonWrappedJSLeakItem()
 {
 }
@@ -62,16 +59,9 @@ nsresult
 leakmonWrappedJSLeakItem::Init(JSObject* aJSObject)
 {
 	mJSObject = aJSObject;
-	return NS_OK;
-}
 
-NS_IMETHODIMP
-leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
-{
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
-
-	nsString result;
 
 	if (JS_ObjectIsFunction(cx, mJSObject)) {
 		JSFunction *fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL(mJSObject));
@@ -80,14 +70,15 @@ leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
 		NS_ENSURE_TRUE(script, NS_ERROR_UNEXPECTED);
 		
 		const char *fname = JS_GetScriptFilename(cx, script);
-		uintN startLine = JS_GetScriptBaseLineNumber(cx, script);
-		uintN endLine = startLine + JS_GetScriptLineExtent(cx, script) - 1;
-
-		char tmpbuf[256];
-		snprintf(tmpbuf, sizeof(tmpbuf), "Function at %s lines %d-%d",
-				 fname, startLine, endLine);
 		// XXX Do we know the encoding of this file name?
-		result.Append(NS_ConvertUTF8toUTF16(tmpbuf));
+		CopyUTF8toUTF16(nsDependentCString(fname), mFileName);
+
+		mLineStart = JS_GetScriptBaseLineNumber(cx, script);
+		mLineEnd = mLineStart + JS_GetScriptLineExtent(cx, script) - 1;
+
+	} else {
+		mLineStart = 0;
+		mLineEnd = 0;
 	}
 
 	// XXX This can execute JS code!  How bad is that?
@@ -101,13 +92,40 @@ leakmonWrappedJSLeakItem::GetDescription(PRUnichar **aDescription)
 	size_t len = JS_GetStringLength(str);
 
 	NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar), "char size mismatch");
-	result.Append(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
+	mString.Assign(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
 
+	return NS_OK;
+}
 
-	PRUnichar *buf = ToNewUnicode(result);
+NS_IMETHODIMP
+leakmonWrappedJSLeakItem::GetFileName(PRUnichar **aResult)
+{
+	PRUnichar *buf = ToNewUnicode(mFileName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = buf;
+	return NS_OK;
+}
 
-	*aDescription = buf;
+NS_IMETHODIMP
+leakmonWrappedJSLeakItem::GetLineStart(PRUint32 *aResult)
+{
+	*aResult = mLineStart;
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonWrappedJSLeakItem::GetLineEnd(PRUint32 *aResult)
+{
+	*aResult = mLineEnd;
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonWrappedJSLeakItem::GetStringRep(PRUnichar **aResult)
+{
+	PRUnichar *buf = ToNewUnicode(mString);
+	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = buf;
 	return NS_OK;
 }
 

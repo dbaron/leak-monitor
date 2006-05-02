@@ -43,6 +43,9 @@
 // Code within this extension
 #include "leakmonIWrappedJSLeakItem.h"
 
+// XPCOM glue APIs
+#include "nsStringAPI.h"
+
 struct JSObject;
 
 class leakmonWrappedJSLeakItem : public leakmonIWrappedJSLeakItem {
@@ -58,6 +61,11 @@ public:
 
 private:
 	JSObject* mJSObject;
+
+	nsString mFileName;
+	PRUint32 mLineStart;
+	PRUint32 mLineEnd;
+	nsString mString;
 };
 
 #endif /* !defined(leakmonWrappedJSLeakItem_h_) */

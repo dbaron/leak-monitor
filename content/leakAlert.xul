@@ -53,7 +53,10 @@
 
 	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
 		<treecols>
-			<treecol flex="1" id="lwjs:main" />
+			<treecol flex="1" id="lwjs:string" label="String Representation" />
+			<treecol flex="1" id="lwjs:filename" label="File Name" />
+			<treecol style="width: 3em" id="lwjs:linestart" label="Line" />
+			<treecol style="width: 3em" id="lwjs:lineend" label="Line" />
 		</treecols>
 		<treechildren id="lwjs-body" />
 	</tree>
