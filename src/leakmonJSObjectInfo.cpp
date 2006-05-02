@@ -87,7 +87,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 			
 			const char *fname = JS_GetScriptFilename(cx, script);
 			// XXX Do we know the encoding of this file name?
-			CopyUTF8toUTF16(nsDependentCString(fname), mFileName);
+			mFileName = NS_ConvertUTF8toUTF16(fname);
 
 			mLineStart = JS_GetScriptBaseLineNumber(cx, script);
 			mLineEnd = mLineStart + JS_GetScriptLineExtent(cx, script) - 1;
@@ -112,7 +112,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetName(PRUnichar **aResult)
 {
-	PRUnichar *buf = ToNewUnicode(mName);
+	PRUnichar *buf = NS_StringCloneData(mName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
 	return NS_OK;
@@ -121,7 +121,7 @@ leakmonJSObjectInfo::GetName(PRUnichar **aResult)
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetFileName(PRUnichar **aResult)
 {
-	PRUnichar *buf = ToNewUnicode(mFileName);
+	PRUnichar *buf = NS_StringCloneData(mFileName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
 	return NS_OK;
@@ -144,7 +144,7 @@ leakmonJSObjectInfo::GetLineEnd(PRUint32 *aResult)
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetStringRep(PRUnichar **aResult)
 {
-	PRUnichar *buf = ToNewUnicode(mString);
+	PRUnichar *buf = NS_StringCloneData(mString);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
 	return NS_OK;
