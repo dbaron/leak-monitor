@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<!-- vim: set shiftwidth=4 tabstop=4 noexpandtab autoindent copyindent: -->
+<!-- vim: set shiftwidth=4 tabstop=8 autoindent expandtab: -->
 <!-- ***** BEGIN LICENSE BLOCK *****
    - Version: MPL 1.1/GPL 2.0/LGPL 2.1
    -
@@ -35,41 +34,11 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
+<!ENTITY leakAlert.title "New Leak Alert">
+<!ENTITY leakAlert.explanation "The following JavaScript objects from a window that was recently closed are still held by native code.">
 
-<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
-
-<!DOCTYPE dialog SYSTEM "chrome://leakmonitor/locale/leakAlert.dtd">
-
-<dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        onload="LeakAlertOnLoad()"
-        onunload="LeakAlertOnUnload()"
-        title="&leakAlert.title;"
-        buttons="accept"
-        >
-	<script type="application/x-javascript"
-	        src="chrome://leakmonitor/content/tree-utils.js" />
-	<script type="application/x-javascript"
-	        src="chrome://leakmonitor/content/leakAlert.js" />
-
-	<label value="&leakAlert.explanation;" />
-
-	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
-		<treecols>
-			<treecol primary="true" flex="2" id="lwjs:name"
-			         label="&leakAlert.lwjstree.columnLabel.name;" />
-			<splitter class="tree-splitter" />
-			<treecol flex="3" id="lwjs:filename" crop="center"
-			         label="&leakAlert.lwjstree.columnLabel.filename;" />
-			<splitter class="tree-splitter" />
-			<treecol style="width: 3em" id="lwjs:linestart"
-			         label="&leakAlert.lwjstree.columnLabel.linestart;" />
-			<splitter class="tree-splitter" />
-			<treecol style="width: 3em" id="lwjs:lineend"
-			         label="&leakAlert.lwjstree.columnLabel.lineend;" />
-			<splitter class="tree-splitter" />
-			<treecol flex="2" id="lwjs:string"
-			         label="&leakAlert.lwjstree.columnLabel.string;" />
-		</treecols>
-		<treechildren id="lwjs-body" />
-	</tree>
-</dialog>
+<!ENTITY leakAlert.lwjstree.columnLabel.name "Name">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "File Name">
+<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Start">
+<!ENTITY leakAlert.lwjstree.columnLabel.lineend "End">
+<!ENTITY leakAlert.lwjstree.columnLabel.string "String Representation">
