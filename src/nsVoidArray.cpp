@@ -38,7 +38,6 @@
 #include <stdlib.h>
 
 #include "nsVoidArray.h"
-#include "nsQuickSort.h"
 #include "prbit.h"
 #include "nsISupportsImpl.h" // for nsTraceRefcnt
 
@@ -653,16 +652,6 @@ VoidArrayComparator(const void* aElement1, const void* aElement2, void* aData)
   return (*ctx->mComparatorFunc)(*NS_STATIC_CAST(void* const*, aElement1),
                                  *NS_STATIC_CAST(void* const*, aElement2),
                                   ctx->mData);
-}
-
-void nsVoidArray::Sort(nsVoidArrayComparatorFunc aFunc, void* aData)
-{
-  if (mImpl && mImpl->mCount > 1)
-  {
-    VoidArrayComparatorContext ctx = {aFunc, aData};
-    NS_QuickSort(mImpl->mArray, mImpl->mCount, sizeof(mImpl->mArray[0]),
-                 VoidArrayComparator, &ctx);
-  }
 }
 
 PRBool nsVoidArray::EnumerateForwards(nsVoidArrayEnumFunc aFunc, void* aData)

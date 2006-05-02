@@ -42,10 +42,6 @@
 #include "nscore.h"
 #include "nsDebug.h"
 
-// Comparator callback function for sorting array values.
-typedef int (* PR_CALLBACK nsVoidArrayComparatorFunc)
-            (const void* aElement1, const void* aElement2, void* aData);
-
 // Enumerator callback function. Return PR_FALSE to stop
 typedef PRBool (* PR_CALLBACK nsVoidArrayEnumFunc)(void* aElement, void *aData);
 
@@ -122,8 +118,6 @@ public:
   // Subtly different - Compact() tries to be smart about whether we
   // should reallocate the array; SizeTo() always reallocates.
   NS_HIDDEN_(void) Compact();
-
-  NS_HIDDEN_(void) Sort(nsVoidArrayComparatorFunc aFunc, void* aData);
 
   NS_HIDDEN_(PRBool) EnumerateForwards(nsVoidArrayEnumFunc aFunc, void* aData);
   NS_HIDDEN_(PRBool) EnumerateBackwards(nsVoidArrayEnumFunc aFunc, void* aData);
