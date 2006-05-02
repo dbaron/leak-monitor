@@ -56,8 +56,9 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 
 nsresult
-leakmonJSObjectInfo::Init(JSObject* aJSObject)
+leakmonJSObjectInfo::Init(JSObject* aJSObject, const PRUnichar *aName)
 {
+	mName.Assign(aName);
 	mJSObject = aJSObject;
 
 	JSContext *cx = leakmonService::GetJSContext();
@@ -94,6 +95,15 @@ leakmonJSObjectInfo::Init(JSObject* aJSObject)
 	NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar), "char size mismatch");
 	mString.Assign(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
 
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonJSObjectInfo::GetName(PRUnichar **aResult)
+{
+	PRUnichar *buf = ToNewUnicode(mName);
+	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = buf;
 	return NS_OK;
 }
 

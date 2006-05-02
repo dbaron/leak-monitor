@@ -59,11 +59,13 @@ function LeakAlertOnUnload()
 
 function JSObjectRecord(lwjs)
 {
-	this.setColumnPropertyName("string", "stringRep");
+	this.setColumnPropertyName("name", "name");
 	this.setColumnPropertyName("filename", "fileName");
 	this.setColumnPropertyName("linestart", "lineStart");
 	this.setColumnPropertyName("lineend", "lineEnd");
-	for each (var m in ["fileName", "lineStart", "lineEnd", "stringRep"]) {
+	this.setColumnPropertyName("string", "stringRep");
+	for each (var m in
+	          ["name", "fileName", "lineStart", "lineEnd", "stringRep"]) {
 		this[m] = lwjs[m];
 	}
 }

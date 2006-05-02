@@ -86,8 +86,10 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 		leakmonJSObjectInfo *item = new leakmonJSObjectInfo;
 		nsresult rv;
 		if (item) {
+			NS_NAMED_LITERAL_STRING(n, "[leaked object]");
 			rv = item->Init(NS_STATIC_CAST(JSObject*,
-			                               mLeakedWrappedJSObjects[i]));
+			                               mLeakedWrappedJSObjects[i]),
+			                n.get());
 		} else {
 			rv = NS_ERROR_OUT_OF_MEMORY;
 		}

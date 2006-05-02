@@ -54,7 +54,7 @@ public:
 	~leakmonJSObjectInfo() NS_HIDDEN;
 
 	// For leakmonReport
-	NS_HIDDEN_(nsresult) Init(JSObject *aJSObject);
+	NS_HIDDEN_(nsresult) Init(JSObject *aJSObject, const PRUnichar *aName);
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIJSOBJECTINFO
@@ -62,6 +62,7 @@ public:
 private:
 	JSObject* mJSObject;
 
+	nsString mName;
 	nsString mFileName;
 	PRUint32 mLineStart;
 	PRUint32 mLineEnd;

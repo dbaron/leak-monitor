@@ -40,6 +40,8 @@
 [scriptable, uuid(cc549b31-6136-4cfb-b825-c56889d0fb34)]
 interface leakmonIJSObjectInfo : nsISupports
 {
+	readonly attribute wstring name;
+
 	readonly attribute wstring fileName;
 	readonly attribute unsigned long lineStart;
 	readonly attribute unsigned long lineEnd;
