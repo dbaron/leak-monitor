@@ -54,11 +54,14 @@
 
 	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
 		<treecols>
-			<!-- the tree-utils.js functions can't handle <splitter />s -->
 			<treecol primary="true" flex="2" id="lwjs:name" label="Name" />
+			<splitter class="tree-splitter" />
 			<treecol flex="3" id="lwjs:filename" label="File Name" crop="center" />
+			<splitter class="tree-splitter" />
 			<treecol style="width: 3em" id="lwjs:linestart" label="Start" />
+			<splitter class="tree-splitter" />
 			<treecol style="width: 3em" id="lwjs:lineend" label="End" />
+			<splitter class="tree-splitter" />
 			<treecol flex="2" id="lwjs:string" label="String Representation" />
 		</treecols>
 		<treechildren id="lwjs-body" />
