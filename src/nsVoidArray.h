@@ -181,4 +181,20 @@ private:
   nsVoidArray(const nsVoidArray& other) NS_HIDDEN;
 };
 
+// A zero-based array with a bit of automatic internal storage
+class nsAutoVoidArray : public nsVoidArray {
+public:
+  nsAutoVoidArray() NS_HIDDEN;
+
+  NS_HIDDEN_(void) ResetToAutoBuffer()
+  {
+    SetArray(NS_REINTERPRET_CAST(Impl*, mAutoBuf), kAutoBufSize, 0, PR_FALSE,
+             PR_TRUE);
+  }
+  
+protected:
+  // The internal storage
+  char mAutoBuf[sizeof(Impl) + (kAutoBufSize - 1) * sizeof(void*)];
+};
+
 #endif /* nsVoidArray_h___ */

@@ -694,3 +694,19 @@ PRBool nsVoidArray::EnumerateBackwards(nsVoidArrayEnumFunc aFunc, void* aData)
   }
   return running;
 }
+
+//----------------------------------------------------------------
+// nsAutoVoidArray
+
+nsAutoVoidArray::nsAutoVoidArray()
+  : nsVoidArray()
+{
+  // Don't need to clear it.  Some users just call ReplaceElementAt(),
+  // but we'll clear it at that time if needed to save CPU cycles.
+#if DEBUG_VOIDARRAY
+  mIsAuto = PR_TRUE;
+  ADD_TO_STATS(MaxAuto,0);
+#endif
+  ResetToAutoBuffer();
+}
+
