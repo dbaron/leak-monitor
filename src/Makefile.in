@@ -69,6 +69,7 @@ CPPSRCS		= \
 		leakmonReport.cpp \
 		leakmonService.cpp \
 		leakmonJSObjectInfo.cpp \
+		nsVoidArray.cpp \
 		$(NULL)
 
 EXTRA_DSO_LDOPTS = \
