@@ -35,7 +35,7 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-/* A report of the leaks in a JavaScript scope. */
+/* Information about a JavaScript object that can be displayed in the UI. */
 
 // Internal includes
 #include "leakmonJSObjectInfo.h"
