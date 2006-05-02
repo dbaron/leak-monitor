@@ -95,8 +95,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 	}
 
 	// XXX This can execute JS code!  How bad is that?
-	// XXX Instead, look for functions and try to find a line number?
-	// XXX Could we figure out interfaces?
+	// shaver didn't seem too scared when I described it to him.
 	JSString *str = JS_ValueToString(cx, mJSValue);
 	NS_ENSURE_TRUE(str, NS_ERROR_OUT_OF_MEMORY);
 
@@ -173,6 +172,8 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	JSBool ok = JS_IdToValue(cx, mProperties->vector[aIndex], &n);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
+	// XXX This can execute JS code!  How bad is that?
+	// shaver didn't seem too scared when I described it to him.
 	JSString *nstr = JS_ValueToString(cx, n);
 	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
 
@@ -182,6 +183,8 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	const PRUnichar *upropname = JS_GetStringChars(nstr);
 	NS_ENSURE_TRUE(upropname, NS_ERROR_OUT_OF_MEMORY);
 
+	// XXX This can execute JS code!  How bad is that?
+	// shaver didn't seem too scared when I described it to him.
 	jsval v;
 	ok = JS_GetProperty(cx, JSVAL_TO_OBJECT(mJSValue), propname, &v);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
