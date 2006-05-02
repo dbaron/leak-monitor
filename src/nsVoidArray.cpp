@@ -41,7 +41,6 @@
 #include "nsQuickSort.h"
 #include "prbit.h"
 #include "nsISupportsImpl.h" // for nsTraceRefcnt
-#include "nsCRTGlue.h"
 
 /**
  * Grow the array by at least this many elements at a time.
