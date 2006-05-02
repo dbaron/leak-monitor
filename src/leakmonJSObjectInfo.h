@@ -46,7 +46,8 @@
 // XPCOM glue APIs
 #include "nsStringAPI.h"
 
-struct JSObject;
+// Frozen APIs
+#include "jsapi.h"
 
 class leakmonJSObjectInfo : public leakmonIJSObjectInfo {
 public:
@@ -54,13 +55,14 @@ public:
 	~leakmonJSObjectInfo() NS_HIDDEN;
 
 	// For leakmonReport
-	NS_HIDDEN_(nsresult) Init(JSObject *aJSObject, const PRUnichar *aName);
+	NS_HIDDEN_(nsresult) Init(jsval aJSValue, const PRUnichar *aName);
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIJSOBJECTINFO
 
 private:
-	JSObject* mJSObject;
+	jsval mJSValue;
+	JSIdArray* mProperties;
 
 	nsString mName;
 	nsString mFileName;

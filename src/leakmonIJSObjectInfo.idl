@@ -47,4 +47,7 @@ interface leakmonIJSObjectInfo : nsISupports
 	readonly attribute unsigned long lineEnd;
 
 	readonly attribute wstring stringRep;
+
+	readonly attribute unsigned long numProperties;
+	leakmonIJSObjectInfo getPropertyAt(in unsigned long index);
 };

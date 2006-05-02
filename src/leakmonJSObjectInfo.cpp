@@ -46,46 +46,58 @@
 #include "jsdbgapi.h"
 
 leakmonJSObjectInfo::leakmonJSObjectInfo()
+	: mProperties(nsnull)
+	, mLineStart(0)
+	, mLineEnd(0)
 {
+	mJSValue = JSVAL_NULL;
 }
 
 leakmonJSObjectInfo::~leakmonJSObjectInfo()
 {
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ASSERTION(cx, "can't shutdown properly");
+
+	if (cx) {
+		JS_DestroyIdArray(cx, mProperties);
+	}
 }
 
 NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 
 nsresult
-leakmonJSObjectInfo::Init(JSObject* aJSObject, const PRUnichar *aName)
+leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 {
 	mName.Assign(aName);
-	mJSObject = aJSObject;
+	mJSValue = aJSValue;
 
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
-	if (JS_ObjectIsFunction(cx, mJSObject)) {
-		JSFunction *fun = JS_ValueToFunction(cx, OBJECT_TO_JSVAL(mJSObject));
-		NS_ENSURE_TRUE(fun, NS_ERROR_UNEXPECTED);
-		JSScript *script = JS_GetFunctionScript(cx, fun);
-		NS_ENSURE_TRUE(script, NS_ERROR_UNEXPECTED);
-		
-		const char *fname = JS_GetScriptFilename(cx, script);
-		// XXX Do we know the encoding of this file name?
-		CopyUTF8toUTF16(nsDependentCString(fname), mFileName);
+	if (JSVAL_IS_OBJECT(mJSValue)) {
+		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
+		mProperties = JS_Enumerate(cx, obj);
+		NS_ENSURE_TRUE(mProperties, NS_ERROR_OUT_OF_MEMORY);
 
-		mLineStart = JS_GetScriptBaseLineNumber(cx, script);
-		mLineEnd = mLineStart + JS_GetScriptLineExtent(cx, script) - 1;
+		if (JS_ObjectIsFunction(cx, obj)) {
+			JSFunction *fun = JS_ValueToFunction(cx, mJSValue);
+			NS_ENSURE_TRUE(fun, NS_ERROR_UNEXPECTED);
+			JSScript *script = JS_GetFunctionScript(cx, fun);
+			NS_ENSURE_TRUE(script, NS_ERROR_UNEXPECTED);
+			
+			const char *fname = JS_GetScriptFilename(cx, script);
+			// XXX Do we know the encoding of this file name?
+			CopyUTF8toUTF16(nsDependentCString(fname), mFileName);
 
-	} else {
-		mLineStart = 0;
-		mLineEnd = 0;
+			mLineStart = JS_GetScriptBaseLineNumber(cx, script);
+			mLineEnd = mLineStart + JS_GetScriptLineExtent(cx, script) - 1;
+		}
 	}
 
 	// XXX This can execute JS code!  How bad is that?
 	// XXX Instead, look for functions and try to find a line number?
 	// XXX Could we figure out interfaces?
-	JSString *str = JS_ValueToString(cx, OBJECT_TO_JSVAL(mJSObject));
+	JSString *str = JS_ValueToString(cx, mJSValue);
 	NS_ENSURE_TRUE(str, NS_ERROR_OUT_OF_MEMORY);
 
 	jschar *chars = JS_GetStringChars(str);
@@ -136,6 +148,55 @@ leakmonJSObjectInfo::GetStringRep(PRUnichar **aResult)
 	PRUnichar *buf = ToNewUnicode(mString);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonJSObjectInfo::GetNumProperties(PRUint32 *aResult)
+{
+	*aResult = mProperties ? mProperties->length : 0;
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
+                                   leakmonIJSObjectInfo **aResult)
+{
+	NS_ENSURE_TRUE(mProperties && aIndex < PRUint32(mProperties->length),
+	               NS_ERROR_INVALID_ARG);
+	NS_ASSERTION(JSVAL_IS_OBJECT(mJSValue), "shouldn't have set mProperties");
+
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
+	jsval n;
+	JSBool ok = JS_IdToValue(cx, mProperties->vector[aIndex], &n);
+	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+	JSString *nstr = JS_ValueToString(cx, n);
+	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
+
+	const char *propname = JS_GetStringBytes(nstr);
+	NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
+
+	const PRUnichar *upropname = JS_GetStringChars(nstr);
+	NS_ENSURE_TRUE(upropname, NS_ERROR_OUT_OF_MEMORY);
+
+	jsval v;
+	ok = JS_GetProperty(cx, JSVAL_TO_OBJECT(mJSValue), propname, &v);
+	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+	leakmonJSObjectInfo *result = new leakmonJSObjectInfo;
+	NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
+
+	nsCOMPtr<leakmonIJSObjectInfo> iresult = result;
+
+	nsresult rv = result->Init(v, NS_REINTERPRET_CAST(const PRUnichar*,
+	                                                  upropname));
+	NS_ENSURE_SUCCESS(rv, rv);
+
+	*aResult = nsnull;
+	iresult.swap(*aResult);
 	return NS_OK;
 }
 

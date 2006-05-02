@@ -44,6 +44,9 @@
 // XPCOM glue APIs
 #include "nsMemory.h"
 
+// Frozen APIs
+#include "jsapi.h"
+
 leakmonReport::leakmonReport()
 {
 }
@@ -87,8 +90,8 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 		nsresult rv;
 		if (item) {
 			NS_NAMED_LITERAL_STRING(n, "[leaked object]");
-			rv = item->Init(NS_STATIC_CAST(JSObject*,
-			                               mLeakedWrappedJSObjects[i]),
+			rv = item->Init(OBJECT_TO_JSVAL(NS_STATIC_CAST(JSObject*,
+			                                    mLeakedWrappedJSObjects[i])),
 			                n.get());
 		} else {
 			rv = NS_ERROR_OUT_OF_MEMORY;
