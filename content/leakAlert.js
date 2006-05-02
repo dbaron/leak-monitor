@@ -43,7 +43,7 @@ var gTreeView = new XULTreeView();
 
 function LeakAlertOnLoad()
 {
-	document.getElementById("lwjs-tree").treeBoxObject.view = gTreeView;
+	document.getElementById("lwjs-tree").view = gTreeView;
 
 	var lwjss = window.arguments[0].QueryInterface(CI.leakmonIReport)
 		.getLeakedWrappedJSs({});
