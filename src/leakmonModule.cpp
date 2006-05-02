@@ -44,8 +44,10 @@
 // XPCOM glue APIs
 #include "nsIGenericFactory.h"
 #include "nsServiceManagerUtils.h"
+#include "nsMemory.h"
 
 // ???
+#include "nsXPCOMCID.h"
 #include "nsIAppStartupNotifier.h"
 
 // 1ee1b3fc-e896-4ac9-870f-43d3a0581dc8
@@ -74,7 +76,7 @@ RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
 	const char service[] = "service,";
 	// sizeof() includes room for terminating null
 	char *value = NS_STATIC_CAST(char*,
-		NS_Alloc(sizeof(service) + strlen(aInfo->mContractID)));
+		nsMemory::Alloc(sizeof(service) + strlen(aInfo->mContractID)));
 	if (!value)
 		return NS_ERROR_OUT_OF_MEMORY;
 	strcpy(value, service);
@@ -82,7 +84,7 @@ RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
 	rv = catMan->AddCategoryEntry(APPSTARTUP_CATEGORY,
 	                              aInfo->mContractID, value,
 	                              PR_TRUE, PR_TRUE, nsnull);
-	NS_Free(value);
+	nsMemory::Free(value);
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	return NS_OK;

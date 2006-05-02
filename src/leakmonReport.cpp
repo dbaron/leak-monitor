@@ -80,7 +80,7 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 
 	leakmonIJSObjectInfo **array =
 		NS_STATIC_CAST(leakmonIJSObjectInfo**,
-			NS_Alloc(count * sizeof(leakmonIJSObjectInfo*)));
+			nsMemory::Alloc(count * sizeof(leakmonIJSObjectInfo*)));
 	NS_ENSURE_TRUE(array, NS_ERROR_OUT_OF_MEMORY);
 
 	memset(array, 0, count * sizeof(leakmonIJSObjectInfo*));
