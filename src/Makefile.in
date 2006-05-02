@@ -72,7 +72,11 @@ CPPSRCS		= \
 		nsVoidArray.cpp \
 		$(NULL)
 
-EXTRA_DSO_LDOPTS = \
+ifeq ($(OS_ARCH),Darwin)
+EXTRA_DSO_LDOPTS += -Wl,-executable_path -Wl,$(DIST)/bin
+endif
+
+EXTRA_DSO_LDOPTS += \
 		$(XPCOM_GLUE_LDOPTS) \
 		$(MOZ_JS_LIBS) \
 		$(NSPR_LIBS) \
