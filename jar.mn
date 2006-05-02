@@ -2,3 +2,5 @@
 leakmon.jar:
 % content leakmonitor %content/
   content/leakAlert.xul
+  content/leakAlert.js
+  content/tree-utils.js
