@@ -59,6 +59,8 @@ function LeakAlertOnUnload()
 
 function JSObjectRecord(lwjs)
 {
+	this.lwjs = lwjs;
+
 	this.setColumnPropertyName("name", "name");
 	this.setColumnPropertyName("filename", "fileName");
 	this.setColumnPropertyName("linestart", "lineStart");
@@ -68,7 +70,20 @@ function JSObjectRecord(lwjs)
 	          ["name", "fileName", "lineStart", "lineEnd", "stringRep"]) {
 		this[m] = lwjs[m];
 	}
+	if (!this.fileName) {
+		this.lineStart = "";
+		this.lineEnd = "";
+	}
+
+	if (lwjs.numProperties > 0)
+		this.reserveChildren(true);
 }
 
 JSObjectRecord.prototype = new XULTreeViewRecord(gTreeView.share);
 
+JSObjectRecord.prototype.onPreOpen = function() {
+	this.childData = new Array();
+	for (var i = 0; i < this.lwjs.numProperties; ++i) {
+		this.appendChild(new JSObjectRecord(this.lwjs.getPropertyAt(i)));
+	}
+}
