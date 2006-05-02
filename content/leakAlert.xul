@@ -43,13 +43,14 @@
 <dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
         onload="LeakAlertOnLoad()"
         onunload="LeakAlertOnUnload()"
+        title="New Leak Alert"
         >
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/tree-utils.js" />
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/leakAlert.js" />
 
-	<label value="Leak alert:" />
+	<label value="The following JavaScript objects from a window that was recently closed are still held by native code." />
 
 	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
 		<treecols>
