@@ -54,6 +54,8 @@
 
 		<em:type>2</em:type>
 
+#expand 		<em:targetPlatform>__TARGET_PLATFORM__</em:targetPlatform>
+
 		<em:name>Leak Monitor</em:name>
 		<em:description>Warn when chrome windows close but leave other code pointing at their JavaScript objects.</em:description>
 		<em:creator>L. David Baron</em:creator>
