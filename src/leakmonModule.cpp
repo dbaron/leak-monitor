@@ -105,13 +105,14 @@ UnregisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile *aPath,
 
 static const nsModuleComponentInfo components[] =
 {
-  { "leakmonService",
-	NS_LEAKMONITOR_SERVICE_CID,
-	NS_LEAKMONITOR_SERVICE_CONTRACTID,
-	leakmonServiceConstructor,
-	RegisterServiceForStartup,
-	UnregisterServiceForStartup
-  }
+	{
+		"leakmonService",
+		NS_LEAKMONITOR_SERVICE_CID,
+		NS_LEAKMONITOR_SERVICE_CONTRACTID,
+		leakmonServiceConstructor,
+		RegisterServiceForStartup,
+		UnregisterServiceForStartup
+	}
 };
 
 NS_IMPL_NSGETMODULE(leakmonModule, components)
