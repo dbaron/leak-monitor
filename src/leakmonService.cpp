@@ -202,7 +202,8 @@ leakmonService::BuildContextInfo()
 	nsVoidArray xpcGCRoots; // of JSObject*
 	JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
 
-	for (PRInt32 i = xpcGCRoots.Count() - 1; i >= 0; --i) {
+	PRInt32 i;
+	for (i = xpcGCRoots.Count() - 1; i >= 0; --i) {
 		JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
 
 		JSObject *global, *parent = rootedObj;
@@ -232,7 +233,7 @@ leakmonService::BuildContextInfo()
 
 	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
 
-	for (PRInt32 i = 0; i < globalsWithNewLeaks.Count(); ++i) {
+	for (i = 0; i < globalsWithNewLeaks.Count(); ++i) {
 		NotifyNewLeak(NS_STATIC_CAST(JSObject*, globalsWithNewLeaks[i]));
 	}
 	
