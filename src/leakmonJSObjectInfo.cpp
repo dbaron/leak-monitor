@@ -74,7 +74,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
-	if (JSVAL_IS_OBJECT(mJSValue)) {
+	if (JSVAL_IS_OBJECT(mJSValue) && !JSVAL_IS_NULL(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
 		mProperties = JS_Enumerate(cx, obj);
 		NS_ENSURE_TRUE(mProperties, NS_ERROR_OUT_OF_MEMORY);
