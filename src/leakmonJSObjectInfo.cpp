@@ -177,16 +177,14 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	JSString *nstr = JS_ValueToString(cx, n);
 	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
 
-	const char *propname = JS_GetStringBytes(nstr);
+	const jschar *propname = JS_GetStringChars(nstr);
 	NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
-
-	const PRUnichar *upropname = JS_GetStringChars(nstr);
-	NS_ENSURE_TRUE(upropname, NS_ERROR_OUT_OF_MEMORY);
 
 	// XXX This can execute JS code!  How bad is that?
 	// shaver didn't seem too scared when I described it to him.
 	jsval v;
-	ok = JS_GetProperty(cx, JSVAL_TO_OBJECT(mJSValue), propname, &v);
+	ok = JS_GetUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
+	                      propname, JS_GetStringLength(nstr), &v);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
 	leakmonJSObjectInfo *result = new leakmonJSObjectInfo;
@@ -195,7 +193,7 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	nsCOMPtr<leakmonIJSObjectInfo> iresult = result;
 
 	nsresult rv = result->Init(v, NS_REINTERPRET_CAST(const PRUnichar*,
-	                                                  upropname));
+	                                                  propname));
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	*aResult = nsnull;
