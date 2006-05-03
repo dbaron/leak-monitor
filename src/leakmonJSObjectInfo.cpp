@@ -83,15 +83,13 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 			JSFunction *fun = JS_ValueToFunction(cx, mJSValue);
 			NS_ENSURE_TRUE(fun, NS_ERROR_UNEXPECTED);
 			JSScript *script = JS_GetFunctionScript(cx, fun);
-			if (script) {
+			if (script) { // null for native code
 				const char *fname = JS_GetScriptFilename(cx, script);
 				// XXX Do we know the encoding of this file name?
 				mFileName = NS_ConvertUTF8toUTF16(fname);
 
 				mLineStart = JS_GetScriptBaseLineNumber(cx, script);
 				mLineEnd = mLineStart + JS_GetScriptLineExtent(cx, script) - 1;
-			} else {
-				mFileName.Assign("[native code]");
 			}
 		}
 	}
