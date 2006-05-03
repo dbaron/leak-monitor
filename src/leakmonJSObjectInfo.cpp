@@ -58,7 +58,7 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ASSERTION(cx, "can't shutdown properly");
 
-	if (cx) {
+	if (mProperties && cx) {
 		JS_DestroyIdArray(cx, mProperties);
 	}
 }
