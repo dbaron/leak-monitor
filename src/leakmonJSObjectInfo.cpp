@@ -74,7 +74,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
-	if (JSVAL_IS_OBJECT(mJSValue) && !JSVAL_IS_NULL(mJSValue)) {
+	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
 		mProperties = JS_Enumerate(cx, obj);
 		NS_ENSURE_TRUE(mProperties, NS_ERROR_OUT_OF_MEMORY);
@@ -163,7 +163,8 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 {
 	NS_ENSURE_TRUE(mProperties && aIndex < PRUint32(mProperties->length),
 	               NS_ERROR_INVALID_ARG);
-	NS_ASSERTION(JSVAL_IS_OBJECT(mJSValue), "shouldn't have set mProperties");
+	NS_ASSERTION(!JSVAL_IS_PRIMITIVE(mJSValue),
+	             "shouldn't have set mProperties");
 
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
