@@ -40,6 +40,7 @@
 // Internal includes
 #include "leakmonReport.h"
 #include "leakmonJSObjectInfo.h"
+#include "leakmonService.h"
 
 // XPCOM glue APIs
 #include "nsCOMPtr.h"
@@ -55,6 +56,16 @@ leakmonReport::leakmonReport()
 
 leakmonReport::~leakmonReport()
 {
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ASSERTION(cx, "yikes");
+
+	if (cx) {
+		for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
+			 i < i_end; ++i) {
+			JS_UnlockGCThing(cx, NS_STATIC_CAST(JSObject*,
+												mLeakedWrappedJSObjects[i]));
+		}
+	}
 }
 
 NS_IMPL_ISUPPORTS1(leakmonReport, leakmonIReport)
@@ -66,7 +77,26 @@ struct ObjectInReportEntry : public PLDHashEntryHdr {
 nsresult
 leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 {
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
 	mLeakedWrappedJSObjects = aLeakedWrappedJSObjects;
+	
+	/*
+	 * This rooting isn't quite sufficient, and can't be, since we
+	 * gather these during garbage collection but root them after (when
+	 * GC could, in theory, be running on another thread
+	 */
+	for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
+	     i < i_end; ++i) {
+		JSObject *obj = NS_STATIC_CAST(JSObject*, mLeakedWrappedJSObjects[i]);
+		JSBool ok = JS_LockGCThing(cx, obj);
+		if (!ok) {
+			NS_NOTREACHED("JS_LockGCThing failed");
+			mLeakedWrappedJSObjects.Clear();
+			return NS_ERROR_FAILURE;
+		}
+	}
 	NS_ENSURE_TRUE(mLeakedWrappedJSObjects.Count() ==
 	                   aLeakedWrappedJSObjects.Count(),
 	               NS_ERROR_OUT_OF_MEMORY);

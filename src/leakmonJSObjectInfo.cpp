@@ -58,8 +58,11 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ASSERTION(cx, "can't shutdown properly");
 
-	if (mProperties && cx) {
-		JS_DestroyIdArray(cx, mProperties);
+	if (cx) {
+		JSVAL_UNLOCK(cx, mJSValue);
+		if (mProperties) {
+			JS_DestroyIdArray(cx, mProperties);
+		}
 	}
 }
 
@@ -68,11 +71,18 @@ NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 nsresult
 leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 {
+	JSContext *cx = leakmonService::GetJSContext();
+	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
 	mName.Assign(aName);
 	mJSValue = aJSValue;
 
-	JSContext *cx = leakmonService::GetJSContext();
-	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+	JSBool ok = JSVAL_LOCK(cx, mJSValue);
+	if (!ok) {
+		NS_NOTREACHED("JSVAL_LOCK failed");
+		mJSValue = JSVAL_NULL;
+		return NS_ERROR_FAILURE;
+	}
 
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
