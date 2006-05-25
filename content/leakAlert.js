@@ -74,6 +74,8 @@ function JSObjectRecord(lwjs)
 		this.lineStart = "";
 		this.lineEnd = "";
 	}
+	/* collapse whitespace in stringRep */
+	this.stringRep = this.stringRep.replace(/\s+/, " ");
 
 	if (lwjs.numProperties > 0)
 		this.reserveChildren(true);
