@@ -41,9 +41,12 @@
 #include "leakmonJSObjectInfo.h"
 #include "leakmonService.h"
 
-// Frozen APIs
+// Frozen APIs that require linking against JS
 #include "jsapi.h"
 #include "jsdbgapi.h"
+
+// Frozen APIs that require linking against NSPR
+#include "prprf.h"
 
 leakmonJSObjectInfo::leakmonJSObjectInfo()
 	: mProperties(nsnull)
@@ -125,14 +128,14 @@ leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
 	aString.Append(mName);
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		char buf[30];
-		snprintf(buf, sizeof(buf), " (%p",
-		         NS_STATIC_CAST(void*, JSVAL_TO_OBJECT(mJSValue)));
+		PR_snprintf(buf, sizeof(buf), " (%p",
+		            NS_STATIC_CAST(void*, JSVAL_TO_OBJECT(mJSValue)));
 		aString.Append(NS_ConvertASCIItoUTF16(buf));
 		if (!mFileName.IsEmpty()) {
 			aString.Append(PRUnichar(','));
 			aString.Append(PRUnichar(' '));
 			aString.Append(mFileName);
-			snprintf(buf, sizeof(buf), ", %d-%d", mLineStart, mLineEnd);
+			PR_snprintf(buf, sizeof(buf), ", %d-%d", mLineStart, mLineEnd);
 			aString.Append(NS_ConvertASCIItoUTF16(buf));
 		}
 		aString.Append(PRUnichar(')'));

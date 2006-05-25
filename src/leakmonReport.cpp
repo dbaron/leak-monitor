@@ -116,8 +116,8 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 	PRUint32 count;
 	nsresult rv = GetLeakedWrappedJSs(&count, &array);
 	NS_ENSURE_SUCCESS(rv, rv);
-	for (PRInt32 i = count - 1; i >= 0; --i) {
-		stack.AppendElement(array[i]);
+	for (PRInt32 j = count - 1; j >= 0; --j) {
+		stack.AppendElement(array[j]);
 	}
 	nsMemory::Free(array);
 
