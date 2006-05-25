@@ -53,6 +53,9 @@
 // Frozen APIs that require linking against JS.
 #include "jsapi.h"
 
+// Frozen APIs that require linking against NSPR.
+#include "prthread.h"
+
 // Unfrozen APIs (XXX should unroll these, per-version)
 #include "nsIJSRuntimeService.h"
 
@@ -99,6 +102,7 @@ private:
 	                       // it seems safer to have our own than pass
 	                       // somebody else's.
 	PLDHashTable mJSScopeInfo;
+	PRThread *mMainThread;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
 	PRPackedBool mHaveQuitApp;

@@ -72,6 +72,8 @@ leakmonService::leakmonService()
 	NS_ASSERTION(gService == nsnull, "duplicate service creation");
 
 	mJSScopeInfo.ops = nsnull;
+	// This assumes we're always created on the main thread.
+	mMainThread = PR_GetCurrentThread();
 }
 
 leakmonService::~leakmonService()
@@ -148,7 +150,11 @@ leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 	JSBool result = gNextGCCallback ? gNextGCCallback(cx, status) : JS_TRUE;
 
 	if (gService && status == JSGC_END) {
-		gService->DidGC();
+		if (PR_GetCurrentThread() == gService->mMainThread) {
+			gService->DidGC();
+		} else {
+			// XXX Perhaps we should proxy, except that requires unfrozen APIs.
+		}
 	}
 
 	return result;
