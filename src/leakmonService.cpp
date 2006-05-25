@@ -51,6 +51,7 @@
 
 // XPCOM glue APIs
 #include "nsDebug.h"
+#include "nsMemory.h"
 #include "nsServiceManagerUtils.h"
 #include "nsVoidArray.h"
 
@@ -289,6 +290,12 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 	nsCOMPtr<leakmonIReport> reportI = report;
 	rv = report->Init(entry->rootedXPCWJSs);
 	NS_ENSURE_SUCCESS(rv, rv);
+
+	PRUnichar *reportText;
+	rv = report->GetReportText(&reportText);
+	NS_ENSURE_SUCCESS(rv, rv);
+	printf("\nLeakReport:\n%s\n", NS_ConvertUTF16toUTF8(reportText).get());
+	nsMemory::Free(reportText);
 
 	if (!mHaveQuitApp) {
 		nsCOMPtr<nsIDOMWindow> win;

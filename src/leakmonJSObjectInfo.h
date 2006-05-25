@@ -56,6 +56,8 @@ public:
 
 	// For leakmonReport
 	NS_HIDDEN_(nsresult) Init(jsval aJSValue, const PRUnichar *aName);
+	NS_HIDDEN_(jsval) GetJSValue() { return mJSValue; }
+	NS_HIDDEN_(void) AppendSelfToString(nsString& aString);
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIJSOBJECTINFO

@@ -45,6 +45,7 @@
 
 // XPCOM glue APIs
 #include "nsVoidArray.h"
+#include "nsStringAPI.h"
 
 class leakmonReport : public leakmonIReport {
 public:
@@ -59,6 +60,7 @@ public:
 
 private:
 	nsVoidArray mLeakedWrappedJSObjects;
+	nsString mReportText;
 };
 
 #endif /* !defined(leakmonReport_h_) */

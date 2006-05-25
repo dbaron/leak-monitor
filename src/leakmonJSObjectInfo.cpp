@@ -109,6 +109,25 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 	return NS_OK;
 }
 
+NS_HIDDEN_(void)
+leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
+{
+	aString.Append(mName);
+	if (!mFileName.IsEmpty()) {
+		aString.Append(PRUnichar(' '));
+		aString.Append(PRUnichar('('));
+		aString.Append(mFileName);
+		char buf[30];
+		snprintf(buf, sizeof(buf), ", %d-%d)", mLineStart, mLineEnd);
+		aString.Append(NS_ConvertASCIItoUTF16(buf));
+	}
+
+	aString.Append(PRUnichar(' '));
+	aString.Append(PRUnichar('='));
+	aString.Append(PRUnichar(' '));
+	aString.Append(mString);
+}
+
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetName(PRUnichar **aResult)
 {

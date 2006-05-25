@@ -42,7 +42,9 @@
 #include "leakmonJSObjectInfo.h"
 
 // XPCOM glue APIs
+#include "nsCOMPtr.h"
 #include "nsMemory.h"
+#include "pldhash.h"
 
 // Frozen APIs
 #include "jsapi.h"
@@ -57,6 +59,10 @@ leakmonReport::~leakmonReport()
 
 NS_IMPL_ISUPPORTS1(leakmonReport, leakmonIReport)
 
+struct ObjectInReportEntry : public PLDHashEntryHdr {
+	void *key; /* lines up with PLDHashEntryStub */
+};
+
 nsresult
 leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 {
@@ -64,6 +70,110 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 	NS_ENSURE_TRUE(mLeakedWrappedJSObjects.Count() ==
 	                   aLeakedWrappedJSObjects.Count(),
 	               NS_ERROR_OUT_OF_MEMORY);
+
+	/* build mReportText */
+	PLDHashTable objectsInReport;
+	nsVoidArray stack; /* strong references to leakmonIJSObjectInfo, with
+	                      null entries as sentinels to pop stack */
+	PRInt32 depth = 0;
+	const PRInt32 maxDepth = 3;
+
+	PRBool ok = PL_DHashTableInit(&objectsInReport, PL_DHashGetStubOps(),
+	                              nsnull, sizeof(ObjectInReportEntry), 16);
+	NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+
+	leakmonIJSObjectInfo **array;
+	PRUint32 count;
+	nsresult rv = GetLeakedWrappedJSs(&count, &array);
+	NS_ENSURE_SUCCESS(rv, rv);
+	for (PRInt32 i = count - 1; i >= 0; --i) {
+		stack.AppendElement(array[i]);
+	}
+	nsMemory::Free(array);
+
+	rv = NS_OK;
+	while (stack.Count()) {
+		PRInt32 i = stack.Count() - 1;
+		nsCOMPtr<leakmonIJSObjectInfo> iinfo =
+			dont_AddRef(NS_STATIC_CAST(leakmonIJSObjectInfo*, stack[i]));
+		stack.RemoveElementAt(i);
+		leakmonJSObjectInfo *info = NS_STATIC_CAST(leakmonJSObjectInfo*,
+			NS_STATIC_CAST(leakmonIJSObjectInfo*, iinfo));
+
+		if (!info) {
+			/* sentinel value to pop depth */
+			--depth;
+			continue;
+		}
+
+		char twistyChar = ' ';
+
+		/* handle children */
+		PRUint32 nprops;
+		info->GetNumProperties(&nprops);
+		if (nprops > 0) {
+			/* figure out if we've already printed this object */
+			ObjectInReportEntry *inReportEntry =
+				NS_STATIC_CAST(ObjectInReportEntry*,
+					PL_DHashTableOperate(&objectsInReport,
+					                     (void*) info->GetJSValue(),
+					                     PL_DHASH_ADD));
+			PRBool inReport;
+			if (!inReportEntry) {
+				rv = NS_ERROR_OUT_OF_MEMORY;
+				inReport = PR_TRUE;
+			} else if (inReportEntry->key) {
+				inReport = PR_TRUE;
+			} else {
+				inReport = PR_FALSE;
+				inReportEntry->key = (void*) info->GetJSValue();
+			}
+
+			if (depth < maxDepth && !inReport) {
+				twistyChar = '+';
+				stack.AppendElement(nsnull); /* sentinel value to pop depth */
+
+				/* append kids to stack */
+				for (PRUint32 iprop = nprops - 1; iprop != PRUint32(-1);
+				     --iprop) {
+					leakmonIJSObjectInfo *child;
+					nsresult rv2 = info->GetPropertyAt(iprop, &child);
+					if (NS_SUCCEEDED(rv2)) {
+						stack.AppendElement(child); /* transfer reference */
+					} else {
+						rv = rv2;
+					}
+				}
+			} else {
+				twistyChar = '-';
+			}
+		}
+
+		/* print representation of this object */
+		for (PRInt32 c = 0; c < depth; ++c)
+			mReportText.Append(PRUnichar(' '));
+		mReportText.Append(PRUnichar('['));
+		mReportText.Append(PRUnichar(twistyChar));
+		mReportText.Append(PRUnichar(']'));
+		mReportText.Append(PRUnichar(' '));
+		info->AppendSelfToString(mReportText);
+		mReportText.Append(PRUnichar('\n'));
+
+		if (twistyChar == '+')
+			++depth;
+	}
+
+	PL_DHashTableFinish(&objectsInReport);
+
+	return rv;
+}
+
+NS_IMETHODIMP
+leakmonReport::GetReportText(PRUnichar **aResult)
+{
+	PRUnichar *buf = NS_StringCloneData(mReportText);
+	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = buf;
 	return NS_OK;
 }
 
