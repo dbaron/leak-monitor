@@ -113,13 +113,19 @@ NS_HIDDEN_(void)
 leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
 {
 	aString.Append(mName);
-	if (!mFileName.IsEmpty()) {
-		aString.Append(PRUnichar(' '));
-		aString.Append(PRUnichar('('));
-		aString.Append(mFileName);
+	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		char buf[30];
-		snprintf(buf, sizeof(buf), ", %d-%d)", mLineStart, mLineEnd);
+		snprintf(buf, sizeof(buf), " (%p",
+		         NS_STATIC_CAST(void*, JSVAL_TO_OBJECT(mJSValue)));
 		aString.Append(NS_ConvertASCIItoUTF16(buf));
+		if (!mFileName.IsEmpty()) {
+			aString.Append(PRUnichar(','));
+			aString.Append(PRUnichar(' '));
+			aString.Append(mFileName);
+			snprintf(buf, sizeof(buf), ", %d-%d", mLineStart, mLineEnd);
+			aString.Append(NS_ConvertASCIItoUTF16(buf));
+		}
+		aString.Append(PRUnichar(')'));
 	}
 
 	aString.Append(PRUnichar(' '));
