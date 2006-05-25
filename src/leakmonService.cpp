@@ -304,7 +304,7 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 		                    nsnull, nsnull, report, getter_AddRefs(win));
 		NS_ENSURE_SUCCESS(rv, rv);
 	} else {
-		// At shutdown, just print to standard output.
+		// During shutdown, just print to standard output.
 		PRUnichar *reportText;
 		rv = report->GetReportText(&reportText);
 		NS_ENSURE_SUCCESS(rv, rv);
