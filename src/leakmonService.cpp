@@ -45,6 +45,7 @@
 #include "leakmonReport.h"
 
 // Frozen APIs
+#include "nsIObserverService.h"
 #include "nsIWindowWatcher.h"
 #include "nsIDOMWindow.h"
 
@@ -60,9 +61,12 @@
 /* static */ leakmonService* leakmonService::gService = nsnull;
 /* static */ JSGCCallback leakmonService::gNextGCCallback = nsnull;
 
+static const char gQuitApplicationTopic[] = "quit-application";
 
 leakmonService::leakmonService()
   : mJSRuntime(nsnull)
+  , mGeneration(0)
+  , mHaveQuitApp(PR_FALSE)
 {
 	NS_ASSERTION(gService == nsnull, "duplicate service creation");
 
@@ -86,15 +90,21 @@ leakmonService::~leakmonService()
 	gService = nsnull;
 }
 
-NS_IMPL_ISUPPORTS2(leakmonService,
+NS_IMPL_ISUPPORTS3(leakmonService,
                    leakmonIService,
-                   nsIObserver)
+                   nsIObserver,
+                   nsISupportsWeakReference)
 
 NS_IMETHODIMP
 leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
                         const PRUnichar *aData)
 {
-	NS_ASSERTION(!strcmp(aTopic, APPSTARTUP_TOPIC), "bad topic");
+	if (!strcmp(aTopic, gQuitApplicationTopic)) {
+		mHaveQuitApp = PR_TRUE;
+	} else if (!strcmp(aTopic, APPSTARTUP_TOPIC)) {
+	} else {
+		NS_NOTREACHED("bad topic");
+	}
 	return NS_OK;
 }
 
@@ -120,6 +130,13 @@ leakmonService::Init()
 	NS_ENSURE_TRUE(mJSContext, NS_ERROR_OUT_OF_MEMORY);
 
 	gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
+
+	nsCOMPtr<nsIObserverService> os =
+		do_GetService("@mozilla.org/observer-service;1", &rv);
+	NS_ENSURE_SUCCESS(rv, rv);
+
+	rv = os->AddObserver(this, gQuitApplicationTopic, PR_TRUE);
+	NS_ENSURE_SUCCESS(rv, rv);
 
 	return NS_OK;
 }
@@ -273,10 +290,13 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 	rv = report->Init(entry->rootedXPCWJSs);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	nsCOMPtr<nsIDOMWindow> win;
-	rv = ww->OpenWindow(nsnull, "chrome://leakmonitor/content/leakAlert.xul",
-	                    nsnull, nsnull, report, getter_AddRefs(win));
-	NS_ENSURE_SUCCESS(rv, rv);
+	if (!mHaveQuitApp) {
+		nsCOMPtr<nsIDOMWindow> win;
+		rv = ww->OpenWindow(nsnull,
+		                    "chrome://leakmonitor/content/leakAlert.xul",
+		                    nsnull, nsnull, report, getter_AddRefs(win));
+		NS_ENSURE_SUCCESS(rv, rv);
+	}
 
 	return NS_OK;
 }

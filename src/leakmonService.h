@@ -59,9 +59,11 @@
 // XPCOM glue APIs
 #include "nsCOMPtr.h"
 #include "pldhash.h"
+#include "nsWeakReference.h"
 
 class leakmonService : public leakmonIService,
-                       public nsIObserver {
+                       public nsIObserver,
+                       public nsSupportsWeakReference {
 public:
 	leakmonService() NS_HIDDEN;
 	~leakmonService() NS_HIDDEN;
@@ -99,6 +101,7 @@ private:
 	PLDHashTable mJSScopeInfo;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
+	PRPackedBool mHaveQuitApp;
 };
 
 #endif /* !defined(leakmonService_h_) */
