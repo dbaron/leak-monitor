@@ -297,18 +297,19 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 	rv = report->Init(entry->rootedXPCWJSs);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	PRUnichar *reportText;
-	rv = report->GetReportText(&reportText);
-	NS_ENSURE_SUCCESS(rv, rv);
-	printf("\nLeakReport:\n%s\n", NS_ConvertUTF16toUTF8(reportText).get());
-	nsMemory::Free(reportText);
-
 	if (!mHaveQuitApp) {
 		nsCOMPtr<nsIDOMWindow> win;
 		rv = ww->OpenWindow(nsnull,
 		                    "chrome://leakmonitor/content/leakAlert.xul",
 		                    nsnull, nsnull, report, getter_AddRefs(win));
 		NS_ENSURE_SUCCESS(rv, rv);
+	} else {
+		// At shutdown, just print to standard output.
+		PRUnichar *reportText;
+		rv = report->GetReportText(&reportText);
+		NS_ENSURE_SUCCESS(rv, rv);
+		printf("\nLeakReport:\n%s\n", NS_ConvertUTF16toUTF8(reportText).get());
+		nsMemory::Free(reportText);
 	}
 
 	return NS_OK;
