@@ -36,6 +36,7 @@
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "New Leak Alert">
 <!ENTITY leakAlert.explanation "The following JavaScript objects from a window that was recently closed are still held by native code.">
+<!ENTITY leakAlert.copyReport "Copy Report to Clipboard">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Name">
 <!ENTITY leakAlert.lwjstree.columnLabel.filename "File Name">

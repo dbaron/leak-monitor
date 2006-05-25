@@ -44,7 +44,9 @@
         onload="LeakAlertOnLoad()"
         onunload="LeakAlertOnUnload()"
         title="&leakAlert.title;"
-        buttons="accept"
+        buttons="accept,extra1"
+        buttonlabelextra1="&leakAlert.copyReport;"
+        ondialogextra1="LeakAlertCopyReport()"
         >
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/tree-utils.js" />

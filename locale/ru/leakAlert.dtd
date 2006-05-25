@@ -37,6 +37,7 @@
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "Новая утечка">
 <!ENTITY leakAlert.explanation "Эти объекты JavaScript закрыты, но всё ещё спродолжают держать в памяти свой код.">
+<!ENTITY leakAlert.copyReport "Copy Report to Clipboard">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
 <!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя Файла">

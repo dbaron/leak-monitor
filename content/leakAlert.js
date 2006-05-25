@@ -37,16 +37,21 @@
 
 /* Dialog that comes up to tell user about leaks. */
 
+const CC = Components.classes;
 const CI = Components.interfaces;
 
 var gTreeView = new XULTreeView();
+
+function getReport()
+{
+	return window.arguments[0].QueryInterface(CI.leakmonIReport);
+}
 
 function LeakAlertOnLoad()
 {
 	document.getElementById("lwjs-tree").view = gTreeView;
 
-	var lwjss = window.arguments[0].QueryInterface(CI.leakmonIReport)
-		.getLeakedWrappedJSs({});
+	var lwjss = getReport().getLeakedWrappedJSs({});
 
 	for each (var lwjs in lwjss) {
 		gTreeView.childData.appendChild(new JSObjectRecord(lwjs));
@@ -55,6 +60,14 @@ function LeakAlertOnLoad()
 
 function LeakAlertOnUnload()
 {
+}
+
+function LeakAlertCopyReport()
+{
+	var text = getReport().reportText;
+	var clipboard = CC["@mozilla.org/widget/clipboardhelper;1"]
+		                .getService(CI.nsIClipboardHelper);
+	clipboard.copyString(text);
 }
 
 function JSObjectRecord(lwjs)
