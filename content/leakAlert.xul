@@ -47,6 +47,7 @@
         buttons="accept,extra1"
         buttonlabelextra1="&leakAlert.copyReport;"
         ondialogextra1="LeakAlertCopyReport()"
+        persist="screenX screenY width height"
         >
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/tree-utils.js" />
