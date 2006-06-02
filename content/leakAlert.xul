@@ -44,9 +44,9 @@
         onload="LeakAlertOnLoad()"
         onunload="LeakAlertOnUnload()"
         title="&leakAlert.title;"
-        buttons="accept,extra1"
-        buttonlabelextra1="&leakAlert.copyReport;"
-        ondialogextra1="LeakAlertCopyReport()"
+        buttons="accept,extra2"
+        buttonlabelextra2="&leakAlert.copyReport;"
+        ondialogextra2="LeakAlertCopyReport()"
         persist="screenX screenY width height"
         >
 	<script type="application/x-javascript"
