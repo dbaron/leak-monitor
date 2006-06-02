@@ -269,16 +269,6 @@ leakmonService::BuildContextInfo()
 }
 
 nsresult
-leakmonService::EnsureContextInfo()
-{
-	if (!mJSScopeInfo.ops) {
-		nsresult rv = BuildContextInfo();
-		NS_ENSURE_SUCCESS(rv, rv);
-	}
-	return NS_OK;
-}
-
-nsresult
 leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 {
 	nsresult rv;

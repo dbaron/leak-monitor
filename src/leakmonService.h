@@ -92,7 +92,6 @@ private:
 		GCCallback(JSContext *cx, JSGCStatus status);
 	NS_HIDDEN_(void) DidGC();
 	NS_HIDDEN_(nsresult) BuildContextInfo();
-	NS_HIDDEN_(nsresult) EnsureContextInfo();
 
 	NS_HIDDEN_(nsresult) NotifyNewLeak(JSObject *aGlobalObject);
 
