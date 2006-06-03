@@ -41,7 +41,7 @@
 <!DOCTYPE dialog SYSTEM "chrome://leakmonitor/locale/leakAlert.dtd">
 
 <dialog xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-        id="leakmonitorLeakAlert"
+        id="leakAlert"
         onload="LeakAlertOnLoad()"
         onunload="LeakAlertOnUnload()"
         title="&leakAlert.title;"
