@@ -90,6 +90,22 @@ private:
 
 	static NS_HIDDEN_(JSBool) JS_DLL_CALLBACK
 		GCCallback(JSContext *cx, JSGCStatus status);
+
+	PR_STATIC_CALLBACK(PLDHashOperator)
+		ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
+		            PRUint32 number, void *arg);
+	JS_STATIC_DLL_CALLBACK(intN)
+		FindXPCGCRoots(void *rp, const char *name, void *data);
+	PR_STATIC_CALLBACK(PLDHashOperator)
+		ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
+		                 PRUint32 number, void *arg);
+	PR_STATIC_CALLBACK(PLDHashOperator)
+		RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
+		                 PRUint32 number, void *arg);
+	PR_STATIC_CALLBACK(PLDHashOperator)
+		FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
+		                 PRUint32 number, void *arg);
+
 	NS_HIDDEN_(void) DidGC();
 	NS_HIDDEN_(nsresult) BuildContextInfo();
 
@@ -105,6 +121,7 @@ private:
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
 	PRPackedBool mHaveQuitApp;
+	PRPackedBool mNesting;
 };
 
 #endif /* !defined(leakmonService_h_) */

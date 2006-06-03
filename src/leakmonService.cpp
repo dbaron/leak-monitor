@@ -64,10 +64,16 @@
 
 static const char gQuitApplicationTopic[] = "quit-application";
 
+#define NS_SUCCESS_NEED_NEW_GC \
+	NS_ERROR_GENERATE_SUCCESS(NS_ERROR_MODULE_GENERAL, 1)
+#define NS_SUCCESS_REPORT_LEAKS \
+	NS_ERROR_GENERATE_SUCCESS(NS_ERROR_MODULE_GENERAL, 2)
+
 leakmonService::leakmonService()
-  : mJSRuntime(nsnull)
-  , mGeneration(0)
-  , mHaveQuitApp(PR_FALSE)
+	: mJSRuntime(nsnull)
+	, mGeneration(0)
+	, mHaveQuitApp(PR_FALSE)
+	, mNesting(PR_FALSE)
 {
 	NS_ASSERTION(gService == nsnull, "duplicate service creation");
 
@@ -162,21 +168,58 @@ leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 
 struct JSScopeInfoEntry : public PLDHashEntryHdr {
 	JSObject *global; // key must be first to match PLDHashEntryStub
-	PRBool hasComponents;
 	nsVoidArray rootedXPCWJSs;
+	PRUint32 prevRootedXPCWJSCount;
 	PRPackedBool generation; // we let it wrap at one bit
 	PRPackedBool hasKnownLeaks;
+	PRPackedBool hasComponents;
+	PRPackedBool notified;
 };
+
+/* static */ PLDHashOperator PR_CALLBACK
+leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
+                            PRUint32 number, void *arg)
+{
+	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
+
+	if (!entry->hasComponents && !entry->notified &&
+	    entry->rootedXPCWJSs.Count()) {
+		entry->notified = PR_TRUE;
+		service->NotifyNewLeak(entry->global);
+	}
+
+	return PL_DHASH_NEXT;
+}
 
 void
 leakmonService::DidGC()
 {
-	nsresult rv = BuildContextInfo();
-	NS_ASSERTION(NS_SUCCEEDED(rv), "hrm, not sure how to handle this");
+	if (mNesting)
+		return;
+
+	nsresult rv;
+	for (;;) {
+		rv = BuildContextInfo();
+		if (NS_FAILED(rv)) {
+			NS_ERROR("BuildContextInfo failed");
+			// not sure how to handle this
+			return;
+		}
+		if (rv != NS_SUCCESS_NEED_NEW_GC)
+			break;
+		mNesting = PR_TRUE;
+		::JS_GC(mJSContext);
+		mNesting = PR_FALSE;
+	}
+
+	if (rv == NS_SUCCESS_REPORT_LEAKS) {
+		PL_DHashTableEnumerate(&mJSScopeInfo, ReportLeaks, this);
+	}
 }
 
-JS_STATIC_DLL_CALLBACK(intN)
-FindXPCGCRoots(void *rp, const char *name, void *data)
+/* static */ intN JS_DLL_CALLBACK
+leakmonService::FindXPCGCRoots(void *rp, const char *name, void *data)
 {
 	nsVoidArray *array = NS_STATIC_CAST(nsVoidArray*, data);
 
@@ -188,21 +231,42 @@ FindXPCGCRoots(void *rp, const char *name, void *data)
 	return JS_MAP_GCROOT_NEXT;
 }
 
-PR_STATIC_CALLBACK(PLDHashOperator)
-ClearRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, void *arg)
+/* static */ PLDHashOperator PR_CALLBACK
+leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
+                                 PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+	if (!entry->hasComponents) {
+		entry->prevRootedXPCWJSCount = entry->rootedXPCWJSs.Count();
+	}
 	entry->rootedXPCWJSs.Clear();
 	return PL_DHASH_NEXT;
 }
 
-PR_STATIC_CALLBACK(PLDHashOperator)
-RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr, PRUint32 number, void *arg)
+/* static */ PLDHashOperator PR_CALLBACK
+leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
+                                 PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	PRPackedBool generation = *NS_STATIC_CAST(PRPackedBool*, arg);
 	if (entry->generation != generation)
 		return PL_DHASH_REMOVE;
+	return PL_DHASH_NEXT;
+}
+
+/* static */ PLDHashOperator PR_CALLBACK
+leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
+                                 PRUint32 number, void *arg)
+{
+	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
+	if (!entry->hasComponents && !entry->notified) {
+		PRUint32 count = entry->rootedXPCWJSs.Count();
+		if (count != 0 && count != entry->prevRootedXPCWJSCount) {
+			*needNewGC = PR_TRUE;
+			return PL_DHASH_STOP;
+		}
+	}
 	return PL_DHASH_NEXT;
 }
 
@@ -217,14 +281,14 @@ leakmonService::BuildContextInfo()
 
 	mGeneration = !mGeneration;
 
-	nsVoidArray globalsWithNewLeaks;
-
-	PL_DHashTableEnumerate(&mJSScopeInfo, ClearRootedLists, nsnull);
+	PL_DHashTableEnumerate(&mJSScopeInfo, ResetRootedLists, nsnull);
 
 	// Find all the XPConnect wrapped JavaScript objects that are rooted
 	// (i.e., owned by native code).
 	nsVoidArray xpcGCRoots; // of JSObject*
 	JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
+
+	PRBool haveLeaks = PR_FALSE;
 
 	PRInt32 i;
 	for (i = xpcGCRoots.Count() - 1; i >= 0; --i) {
@@ -249,23 +313,26 @@ leakmonService::BuildContextInfo()
 			JS_TypeOfValue(mJSContext, comp) == JSTYPE_OBJECT;
 
 		entry->rootedXPCWJSs.AppendElement(rootedObj);
-		if (!entry->hasComponents && !entry->hasKnownLeaks) {
-			entry->hasKnownLeaks = PR_TRUE;
-			globalsWithNewLeaks.AppendElement(global);
+		if (!entry->hasComponents && !entry->notified) {
+			haveLeaks = PR_TRUE;
 		}
 	}
 
+	if (!haveLeaks)
+		return NS_OK;
+
+	PRBool needNewGC = PR_FALSE;
+	PL_DHashTableEnumerate(&mJSScopeInfo, FindNeedForNewGC, &needNewGC);
+
 	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
 
-	for (i = 0; i < globalsWithNewLeaks.Count(); ++i) {
-		NotifyNewLeak(NS_STATIC_CAST(JSObject*, globalsWithNewLeaks[i]));
-	}
-	
+	if (needNewGC)
+		return NS_SUCCESS_NEED_NEW_GC;
+	return NS_SUCCESS_REPORT_LEAKS;
+
 	// XXX Look at wrapped natives too, perhaps?
 	// Maybe use JS_Enumerate or JS_NewPropertyIterator to find the
 	// variables that point to wrapped natives???
-
-	return NS_OK;
 }
 
 nsresult
