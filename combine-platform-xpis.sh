@@ -39,12 +39,11 @@ do
         mv $TMPDIR/in/platform/$PLATFORM $TMPDIR/out/platform/
 
         # Merge install.rdf targetPlatform lines
-        if diff -b $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep "^[<>]" | grep -v targetPlatform
+        dos2unix -q $TMPDIR/in/install.rdf
+        if diff $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep "^[<>]" | grep -v targetPlatform
         then
             echo "Warning: Differences in install.rdf files other than targetPlatform." 1>&2
         fi
-
-        dos2unix $TMPDIR/in/install.rdf
         diff --ifdef=DELETEME $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep -v "^#" > $TMPDIR/install.rdf
         mv $TMPDIR/install.rdf $TMPDIR/out/install.rdf
 
