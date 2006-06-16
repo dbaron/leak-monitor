@@ -51,7 +51,10 @@ function LeakAlertOnLoad()
 {
 	document.getElementById("lwjs-tree").view = gTreeView;
 
-	var lwjss = getReport().getLeakedWrappedJSs({});
+	var report = getReport();
+	window.title = window.title + " (" + report.ident + ")";
+
+	var lwjss = report.getLeakedWrappedJSs({});
 
 	for each (var lwjs in lwjss) {
 		gTreeView.childData.appendChild(new JSObjectRecord(lwjs));

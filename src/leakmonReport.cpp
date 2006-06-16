@@ -47,8 +47,11 @@
 #include "nsMemory.h"
 #include "pldhash.h"
 
-// Frozen APIs
+// Frozen APIs that require linking against JS
 #include "jsapi.h"
+
+// Frozen APIs that require linking against NSPR
+#include "prprf.h"
 
 leakmonReport::leakmonReport()
 {
@@ -75,8 +78,12 @@ struct ObjectInReportEntry : public PLDHashEntryHdr {
 };
 
 nsresult
-leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
+leakmonReport::Init(void *aIdent, const nsVoidArray &aLeakedWrappedJSObjects)
 {
+	nsresult rv;
+
+	mIdent = aIdent;
+
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
@@ -102,6 +109,15 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 	               NS_ERROR_OUT_OF_MEMORY);
 
 	/* build mReportText */
+	mReportText.Append(NS_ConvertASCIItoUTF16("Leaks in window "));
+	PRUnichar* ident;
+	rv = GetIdent(&ident);
+	NS_ENSURE_SUCCESS(rv, rv);
+	mReportText.Append(ident);
+	nsMemory::Free(ident);
+	mReportText.Append(PRUnichar(':'));
+	mReportText.Append(PRUnichar('\n'));
+
 	PLDHashTable objectsInReport;
 	nsVoidArray stack; /* strong references to leakmonIJSObjectInfo, with
 	                      null entries as sentinels to pop stack */
@@ -114,7 +130,7 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 
 	leakmonIJSObjectInfo **array;
 	PRUint32 count;
-	nsresult rv = GetLeakedWrappedJSs(&count, &array);
+	rv = GetLeakedWrappedJSs(&count, &array);
 	NS_ENSURE_SUCCESS(rv, rv);
 	for (PRInt32 j = count - 1; j >= 0; --j) {
 		stack.AppendElement(array[j]);
@@ -196,6 +212,19 @@ leakmonReport::Init(const nsVoidArray &aLeakedWrappedJSObjects)
 	PL_DHashTableFinish(&objectsInReport);
 
 	return rv;
+}
+
+NS_IMETHODIMP
+leakmonReport::GetIdent(PRUnichar **aResult)
+{
+	char buf[40];
+	PR_snprintf(buf, sizeof(buf), "window 0x%p", mIdent);
+
+	PRUnichar *res = NS_StringCloneData(NS_ConvertASCIItoUTF16(buf));
+	NS_ENSURE_TRUE(res, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = res;
+
+	return NS_OK;
 }
 
 NS_IMETHODIMP

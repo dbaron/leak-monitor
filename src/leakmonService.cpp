@@ -353,7 +353,7 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 	leakmonReport *report = new leakmonReport();
 	NS_ENSURE_TRUE(report, NS_ERROR_OUT_OF_MEMORY);
 	nsCOMPtr<leakmonIReport> reportI = report;
-	rv = report->Init(entry->rootedXPCWJSs);
+	rv = report->Init(entry->global, entry->rootedXPCWJSs);
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	if (!mHaveQuitApp) {
