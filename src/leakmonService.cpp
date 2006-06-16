@@ -236,9 +236,7 @@ leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	if (!entry->hasComponents) {
-		entry->prevRootedXPCWJSCount = entry->rootedXPCWJSs.Count();
-	}
+	entry->prevRootedXPCWJSCount = entry->rootedXPCWJSs.Count();
 	entry->rootedXPCWJSs.Clear();
 	return PL_DHASH_NEXT;
 }
@@ -262,7 +260,7 @@ leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
 	if (!entry->hasComponents && !entry->notified) {
 		PRUint32 count = entry->rootedXPCWJSs.Count();
-		if (count != 0 && count != entry->prevRootedXPCWJSCount) {
+		if (count != entry->prevRootedXPCWJSCount) {
 			*needNewGC = PR_TRUE;
 			return PL_DHASH_STOP;
 		}
@@ -304,7 +302,10 @@ leakmonService::BuildContextInfo()
 			PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
 		NS_ENSURE_TRUE(entry, NS_ERROR_OUT_OF_MEMORY);
 
-		entry->global = global;
+		if (!entry->global) {
+			entry->global = global;
+			entry->prevRootedXPCWJSCount = PR_UINT32_MAX;
+		}
 		entry->generation = mGeneration;
 
 		jsval comp;
@@ -318,13 +319,15 @@ leakmonService::BuildContextInfo()
 		}
 	}
 
+	PRUint32 oldCount = mJSScopeInfo.entryCount;
+	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
+
 	if (!haveLeaks)
 		return NS_OK;
 
-	PRBool needNewGC = PR_FALSE;
-	PL_DHashTableEnumerate(&mJSScopeInfo, FindNeedForNewGC, &needNewGC);
-
-	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
+	PRBool needNewGC = oldCount == mJSScopeInfo.entryCount;
+	if (!needNewGC)
+		PL_DHashTableEnumerate(&mJSScopeInfo, FindNeedForNewGC, &needNewGC);
 
 	if (needNewGC)
 		return NS_SUCCESS_NEED_NEW_GC;
