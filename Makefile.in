@@ -45,7 +45,7 @@ include $(DEPTH)/config/autoconf.mk
 
 MODULE		= leakmonitor
 DIRS		= src
-EXTENSION_VERSION = 0.3.0
+EXTENSION_VERSION = 0.3.1
 
 XPI_NAME	= $(MODULE)
 USE_EXTENSION_MANIFEST = 1
