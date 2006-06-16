@@ -1,5 +1,5 @@
 #!/bin/bash
-# vim: set shiftwidth=4 tabstop=4 autoindent expandtab:
+# vim: set shiftwidth=4 tabstop=4 autoindent noexpandtab:
 
 if [ $# -lt 3 ]
 then
@@ -35,21 +35,21 @@ do
 	done
 	if [ -e $TMPDIR/out ]
 	then
-        # Move platform directory
-        mv $TMPDIR/in/platform/$PLATFORM $TMPDIR/out/platform/
+		# Move platform directory
+		mv $TMPDIR/in/platform/$PLATFORM $TMPDIR/out/platform/
 
-        # Merge install.rdf targetPlatform lines
-        dos2unix -q $TMPDIR/in/install.rdf
-        if diff $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep "^[<>]" | grep -v targetPlatform
-        then
-            echo "Warning: Differences in install.rdf files other than targetPlatform." 1>&2
-        fi
-        diff --ifdef=DELETEME $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep -v "^#" > $TMPDIR/install.rdf
-        mv $TMPDIR/install.rdf $TMPDIR/out/install.rdf
+		# Merge install.rdf targetPlatform lines
+		dos2unix -q $TMPDIR/in/install.rdf
+		if diff $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep "^[<>]" | grep -v targetPlatform
+		then
+			echo "Warning: Differences in install.rdf files other than targetPlatform." 1>&2
+		fi
+		diff --ifdef=DELETEME $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep -v "^#" > $TMPDIR/install.rdf
+		mv $TMPDIR/install.rdf $TMPDIR/out/install.rdf
 
-        # XXX Warn if there are other differences?
+		# XXX Warn if there are other differences?
 
-        # Remove the rest
+		# Remove the rest
 		rm -rf $TMPDIR/in
 	else
 		mv $TMPDIR/in $TMPDIR/out
