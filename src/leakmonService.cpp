@@ -325,7 +325,7 @@ leakmonService::BuildContextInfo()
 	if (!haveLeaks)
 		return NS_OK;
 
-	PRBool needNewGC = oldCount == mJSScopeInfo.entryCount;
+	PRBool needNewGC = oldCount != mJSScopeInfo.entryCount;
 	if (!needNewGC)
 		PL_DHashTableEnumerate(&mJSScopeInfo, FindNeedForNewGC, &needNewGC);
 
