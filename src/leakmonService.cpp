@@ -214,12 +214,14 @@ leakmonService::DidGC()
 	if (rv == NS_SUCCESS_REPORT_LEAKS) {
 		PL_DHashTableEnumerate(&mJSScopeInfo, ReportLeaks, this);
 	}
+
 	PRInt32 i = mReclaimWindows.Count();
 	while (i > 0) {
 		--i;
 		NotifyLeaks(NS_STATIC_CAST(JSObject*, mReclaimWindows.ElementAt(i)),
 		            RECLAIMED_LEAKS);
 	}
+	mReclaimWindows.Clear();
 }
 
 /* static */ intN JS_DLL_CALLBACK
