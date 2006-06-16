@@ -44,7 +44,8 @@ do
             echo "Warning: Differences in install.rdf files other than targetPlatform." 1>&2
         fi
 
-        diff -b --ifdef=DELETEME $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep -v "^#" > $TMPDIR/install.rdf
+        dos2unix $TMPDIR/in/install.rdf
+        diff --ifdef=DELETEME $TMPDIR/out/install.rdf $TMPDIR/in/install.rdf | grep -v "^#" > $TMPDIR/install.rdf
         mv $TMPDIR/install.rdf $TMPDIR/out/install.rdf
 
         # XXX Warn if there are other differences?
