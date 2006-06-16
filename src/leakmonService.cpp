@@ -171,7 +171,6 @@ struct JSScopeInfoEntry : public PLDHashEntryHdr {
 	nsVoidArray rootedXPCWJSs;
 	PRUint32 prevRootedXPCWJSCount;
 	PRPackedBool generation; // we let it wrap at one bit
-	PRPackedBool hasKnownLeaks;
 	PRPackedBool hasComponents;
 	PRPackedBool notified;
 };
