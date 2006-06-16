@@ -53,7 +53,6 @@
 #include "nsDebug.h"
 #include "nsMemory.h"
 #include "nsServiceManagerUtils.h"
-#include "nsVoidArray.h"
 
 // Unfrozen APIs that shouldn't hurt
 // filed https://bugzilla.mozilla.org/show_bug.cgi?id=335977
@@ -169,7 +168,7 @@ leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 struct JSScopeInfoEntry : public PLDHashEntryHdr {
 	JSObject *global; // key must be first to match PLDHashEntryStub
 	nsVoidArray rootedXPCWJSs;
-	PRUint32 prevRootedXPCWJSCount;
+	PRInt32 prevRootedXPCWJSCount;
 	PRPackedBool generation; // we let it wrap at one bit
 	PRPackedBool hasComponents;
 	PRPackedBool notified;
@@ -185,7 +184,7 @@ leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	if (!entry->hasComponents && !entry->notified &&
 	    entry->rootedXPCWJSs.Count()) {
 		entry->notified = PR_TRUE;
-		service->NotifyNewLeak(entry->global);
+		service->NotifyLeaks(entry->global, leakmonService::NEW_LEAKS);
 	}
 
 	return PL_DHASH_NEXT;
@@ -214,6 +213,12 @@ leakmonService::DidGC()
 
 	if (rv == NS_SUCCESS_REPORT_LEAKS) {
 		PL_DHashTableEnumerate(&mJSScopeInfo, ReportLeaks, this);
+	}
+	PRInt32 i = mReclaimWindows.Count();
+	while (i > 0) {
+		--i;
+		NotifyLeaks(NS_STATIC_CAST(JSObject*, mReclaimWindows.ElementAt(i)),
+		            RECLAIMED_LEAKS);
 	}
 }
 
@@ -245,9 +250,17 @@ leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	PRPackedBool generation = *NS_STATIC_CAST(PRPackedBool*, arg);
-	if (entry->generation != generation)
+	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
+	if (entry->generation != service->mGeneration) {
+		if (entry->notified) {
+			service->mReclaimWindows.AppendElement(entry->global);
+		}
 		return PL_DHASH_REMOVE;
+	}
+	if (entry->notified &&
+	    entry->prevRootedXPCWJSCount != entry->rootedXPCWJSs.Count()) {
+		service->mReclaimWindows.AppendElement(entry->global);
+	}
 	return PL_DHASH_NEXT;
 }
 
@@ -258,7 +271,7 @@ leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
 	if (!entry->hasComponents && !entry->notified) {
-		PRUint32 count = entry->rootedXPCWJSs.Count();
+		PRInt32 count = entry->rootedXPCWJSs.Count();
 		if (count != entry->prevRootedXPCWJSCount) {
 			*needNewGC = PR_TRUE;
 			return PL_DHASH_STOP;
@@ -319,7 +332,7 @@ leakmonService::BuildContextInfo()
 	}
 
 	PRUint32 oldCount = mJSScopeInfo.entryCount;
-	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, &mGeneration);
+	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, this);
 
 	if (!haveLeaks)
 		return NS_OK;
@@ -338,7 +351,7 @@ leakmonService::BuildContextInfo()
 }
 
 nsresult
-leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
+leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 {
 	nsresult rv;
 
@@ -348,18 +361,37 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
 		PL_DHashTableOperate(&mJSScopeInfo, aGlobalObject, PL_DHASH_LOOKUP));
-	NS_ASSERTION(PL_DHASH_ENTRY_IS_BUSY(entry), "entry not in hashtable");
+	nsVoidArray empty;
+	const nsVoidArray *leaks;
+	if (PL_DHASH_ENTRY_IS_BUSY(entry)) {
+		leaks = &entry->rootedXPCWJSs;
+	} else {
+		NS_ASSERTION(aType != NEW_LEAKS, "should be in table");
+		leaks = &empty;
+	}
 
 	leakmonReport *report = new leakmonReport();
 	NS_ENSURE_TRUE(report, NS_ERROR_OUT_OF_MEMORY);
 	nsCOMPtr<leakmonIReport> reportI = report;
-	rv = report->Init(entry->global, entry->rootedXPCWJSs);
+	rv = report->Init(aGlobalObject, *leaks);
 	NS_ENSURE_SUCCESS(rv, rv);
+
+	const char *dialogURL;
+	switch (aType) {
+		case NEW_LEAKS:
+			dialogURL = "chrome://leakmonitor/content/leakAlert.xul";
+			break;
+		case RECLAIMED_LEAKS:
+			dialogURL = "chrome://leakmonitor/content/reclaimedLeakAlert.xul";
+			break;
+		default:
+			NS_ERROR("unknown type");
+			return NS_ERROR_UNEXPECTED;
+	}
 
 	if (!mHaveQuitApp) {
 		nsCOMPtr<nsIDOMWindow> win;
-		rv = ww->OpenWindow(nsnull,
-		                    "chrome://leakmonitor/content/leakAlert.xul",
+		rv = ww->OpenWindow(nsnull, dialogURL,
 		                    nsnull, nsnull, report, getter_AddRefs(win));
 		NS_ENSURE_SUCCESS(rv, rv);
 	} else {
@@ -367,7 +399,9 @@ leakmonService::NotifyNewLeak(JSObject *aGlobalObject)
 		PRUnichar *reportText;
 		rv = report->GetReportText(&reportText);
 		NS_ENSURE_SUCCESS(rv, rv);
-		printf("\nLeakReport:\n%s\n", NS_ConvertUTF16toUTF8(reportText).get());
+		printf("\nLeakReport (%s leaks):\n%s\n",
+		       (aType == NEW_LEAKS) ? "new" : "reclaimed",
+		       NS_ConvertUTF16toUTF8(reportText).get());
 		nsMemory::Free(reportText);
 	}
 

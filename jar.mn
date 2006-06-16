@@ -5,6 +5,7 @@ leakmon.jar:
 % locale leakmonitor ru %locale/ru/
   content/leakAlert.xul
   content/leakAlert.js
+  content/reclaimedLeakAlert.xul
   content/tree-utils.js
   locale/en-US/leakAlert.dtd
   locale/ru/leakAlert.dtd

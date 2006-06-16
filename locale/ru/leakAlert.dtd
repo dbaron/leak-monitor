@@ -37,6 +37,8 @@
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "Новая утечка">
 <!ENTITY leakAlert.explanation "Эти объекты JavaScript закрыты, но всё ещё спродолжают держать в памяти свой код.">
+<!ENTITY leakAlert.reclaimed.title "Reclaimed Leak Alert">
+<!ENTITY leakAlert.reclaimed.explanation "JavaScript objects from this window were previously reported as having leaked, but some of the memory has been reclaimed.  The following objects are still leaked.">
 <!ENTITY leakAlert.copyReport "Корировать отчёт в Буфер обмена">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">

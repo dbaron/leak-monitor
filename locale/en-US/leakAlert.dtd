@@ -36,6 +36,8 @@
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "New Leak Alert">
 <!ENTITY leakAlert.explanation "The following JavaScript objects from a window that was recently closed are still held by native code.">
+<!ENTITY leakAlert.reclaimed.title "Reclaimed Leak Alert">
+<!ENTITY leakAlert.reclaimed.explanation "JavaScript objects from this window were previously reported as having leaked, but some of the memory has been reclaimed.  The following objects are still leaked.">
 <!ENTITY leakAlert.copyReport "Copy Report to Clipboard">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Name">

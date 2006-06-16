@@ -109,7 +109,7 @@ leakmonReport::Init(void *aIdent, const nsVoidArray &aLeakedWrappedJSObjects)
 	               NS_ERROR_OUT_OF_MEMORY);
 
 	/* build mReportText */
-	mReportText.Append(NS_ConvertASCIItoUTF16("Leaks in window "));
+	mReportText.Append(NS_ConvertASCIItoUTF16("Leaks in "));
 	PRUnichar* ident;
 	rv = GetIdent(&ident);
 	NS_ENSURE_SUCCESS(rv, rv);

@@ -64,6 +64,9 @@
 #include "pldhash.h"
 #include "nsWeakReference.h"
 
+// XPCOM glue APIs in 1.9, but included in this extension
+#include "nsVoidArray.h"
+
 class leakmonService : public leakmonIService,
                        public nsIObserver,
                        public nsSupportsWeakReference {
@@ -109,7 +112,8 @@ private:
 	NS_HIDDEN_(void) DidGC();
 	NS_HIDDEN_(nsresult) BuildContextInfo();
 
-	NS_HIDDEN_(nsresult) NotifyNewLeak(JSObject *aGlobalObject);
+	enum NotifyType { NEW_LEAKS, RECLAIMED_LEAKS };
+	NS_HIDDEN_(nsresult) NotifyLeaks(JSObject *aGlobalObject, NotifyType aType);
 
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
 	JSRuntime *mJSRuntime;
@@ -118,6 +122,7 @@ private:
 	                       // somebody else's.
 	PLDHashTable mJSScopeInfo;
 	PRThread *mMainThread;
+	nsVoidArray mReclaimWindows;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed
 	PRPackedBool mHaveQuitApp;
