@@ -52,7 +52,7 @@ function LeakAlertOnLoad()
 	document.getElementById("lwjs-tree").view = gTreeView;
 
 	var report = getReport();
-	window.title = window.title + " (" + report.ident + ")";
+	document.title = document.title + " (" + report.ident + ")";
 
 	var lwjss = report.getLeakedWrappedJSs({});
 
