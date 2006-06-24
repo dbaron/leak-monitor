@@ -44,7 +44,9 @@
         id="leakAlert"
         onload="LeakAlertOnLoad()"
         onunload="LeakAlertOnUnload()"
-        title="&leakAlert.title;"
+        title=""
+        title.leak="&leakAlert.title;"
+        title.reclaim="&leakAlert.reclaimed.title;"
         buttons="accept,extra2"
         buttonlabelextra2="&leakAlert.copyReport;"
         ondialogextra2="LeakAlertCopyReport()"
@@ -55,7 +57,8 @@
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/leakAlert.js" />
 
-	<description>&leakAlert.explanation;</description>
+	<description id="desc.leak" collapsed="true">&leakAlert.explanation;</description>
+	<description id="desc.reclaim" collapsed="true">&leakAlert.reclaimed.explanation;</description>
 
 	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
 		<treecols>

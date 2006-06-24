@@ -52,8 +52,24 @@ function LeakAlertOnLoad()
 	document.getElementById("lwjs-tree").view = gTreeView;
 
 	var report = getReport();
-	document.title = document.title + " (" + report.ident + ")";
+	var reason;
+	switch (report.reason) {
+		case CI.leakmonIReport.NEW_LEAKS:
+			reason = "leak";
+			break;
+		case CI.leakmonIReport.RECLAIMED_LEAKS:
+			reason = "reclaim"
+			break;
+		default:
+			throw "Unknown report type";
+	}
 
+	/* change the dialog so it shows appropriate UI for the report type */
+	document.title = document.documentElement.getAttribute("title." + reason) +
+	                 " (" + report.ident + ")";
+	document.getElementById("desc." + reason).removeAttribute("collapsed");
+
+	/* populate the tree from the report */
 	var lwjss = report.getLeakedWrappedJSs({});
 
 	for each (var lwjs in lwjss) {

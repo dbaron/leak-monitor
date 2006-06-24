@@ -184,7 +184,7 @@ leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	if (!entry->hasComponents && !entry->notified &&
 	    entry->rootedXPCWJSs.Count()) {
 		entry->notified = PR_TRUE;
-		service->NotifyLeaks(entry->global, leakmonService::NEW_LEAKS);
+		service->NotifyLeaks(entry->global, leakmonIReport::NEW_LEAKS);
 	}
 
 	return PL_DHASH_NEXT;
@@ -219,7 +219,7 @@ leakmonService::DidGC()
 	while (i > 0) {
 		--i;
 		NotifyLeaks(NS_STATIC_CAST(JSObject*, mReclaimWindows.ElementAt(i)),
-		            RECLAIMED_LEAKS);
+		            leakmonIReport::RECLAIMED_LEAKS);
 	}
 	mReclaimWindows.Clear();
 }
@@ -368,30 +368,19 @@ leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 	if (PL_DHASH_ENTRY_IS_BUSY(entry)) {
 		leaks = &entry->rootedXPCWJSs;
 	} else {
-		NS_ASSERTION(aType != NEW_LEAKS, "should be in table");
+		NS_ASSERTION(aType != leakmonIReport::NEW_LEAKS,
+		             "should be in table");
 		leaks = &empty;
 	}
 
 	leakmonReport *report = new leakmonReport();
 	NS_ENSURE_TRUE(report, NS_ERROR_OUT_OF_MEMORY);
 	nsCOMPtr<leakmonIReport> reportI = report;
-	rv = report->Init(aGlobalObject, *leaks);
+	rv = report->Init(aGlobalObject, aType, *leaks);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	const char *dialogURL;
-	switch (aType) {
-		case NEW_LEAKS:
-			dialogURL = "chrome://leakmonitor/content/leakAlert.xul";
-			break;
-		case RECLAIMED_LEAKS:
-			dialogURL = "chrome://leakmonitor/content/reclaimedLeakAlert.xul";
-			break;
-		default:
-			NS_ERROR("unknown type");
-			return NS_ERROR_UNEXPECTED;
-	}
-
 	if (!mHaveQuitApp) {
+		const char dialogURL[] = "chrome://leakmonitor/content/leakAlert.xul";
 		nsCOMPtr<nsIDOMWindow> win;
 		rv = ww->OpenWindow(nsnull, dialogURL,
 		                    nsnull, nsnull, report, getter_AddRefs(win));
@@ -402,7 +391,7 @@ leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 		rv = report->GetReportText(&reportText);
 		NS_ENSURE_SUCCESS(rv, rv);
 		printf("\nLeakReport (%s leaks):\n%s\n",
-		       (aType == NEW_LEAKS) ? "new" : "reclaimed",
+		       (aType == leakmonIReport::NEW_LEAKS) ? "new" : "reclaimed",
 		       NS_ConvertUTF16toUTF8(reportText).get());
 		nsMemory::Free(reportText);
 	}

@@ -112,7 +112,8 @@ private:
 	NS_HIDDEN_(void) DidGC();
 	NS_HIDDEN_(nsresult) BuildContextInfo();
 
-	enum NotifyType { NEW_LEAKS, RECLAIMED_LEAKS };
+	typedef PRUint32 NotifyType; // specifically, the reason constants
+	                             // on leakmonIReport
 	NS_HIDDEN_(nsresult) NotifyLeaks(JSObject *aGlobalObject, NotifyType aType);
 
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;

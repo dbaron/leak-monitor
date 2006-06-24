@@ -53,7 +53,7 @@ public:
 	~leakmonReport() NS_HIDDEN;
 
 	// For leakmonService
-	NS_HIDDEN_(nsresult) Init(void *aIdent,
+	NS_HIDDEN_(nsresult) Init(void *aIdent, PRUint32 aReason,
 	                          const nsVoidArray &aLeakedWrappedJSObjects);
 
 	NS_DECL_ISUPPORTS
@@ -61,6 +61,7 @@ public:
 
 private:
 	void *mIdent;
+	PRUint32 mReason;
 	nsVoidArray mLeakedWrappedJSObjects;
 	nsString mReportText;
 };

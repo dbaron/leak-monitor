@@ -78,11 +78,13 @@ struct ObjectInReportEntry : public PLDHashEntryHdr {
 };
 
 nsresult
-leakmonReport::Init(void *aIdent, const nsVoidArray &aLeakedWrappedJSObjects)
+leakmonReport::Init(void *aIdent, PRUint32 aReason,
+		            const nsVoidArray &aLeakedWrappedJSObjects)
 {
 	nsresult rv;
 
 	mIdent = aIdent;
+	mReason = aReason;
 
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
@@ -224,6 +226,13 @@ leakmonReport::GetIdent(PRUnichar **aResult)
 	NS_ENSURE_TRUE(res, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = res;
 
+	return NS_OK;
+}
+
+NS_IMETHODIMP
+leakmonReport::GetReason(PRUint32 *aResult)
+{
+	*aResult = mReason;
 	return NS_OK;
 }
 

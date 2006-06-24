@@ -39,11 +39,16 @@
 
 interface leakmonIJSObjectInfo;
 
-[scriptable, uuid(d7954e37-0ea8-4310-a46e-55f0705a5a41)]
+[scriptable, uuid(9e3a5934-67a7-4196-95b8-77c07370714e)]
 interface leakmonIReport : nsISupports
 {
 	/* unique identifier for this report's window */
 	readonly attribute wstring ident;
+
+	/* reason for the report being sent */
+	const unsigned long NEW_LEAKS = 0;
+	const unsigned long RECLAIMED_LEAKS = 1;
+	readonly attribute unsigned long reason;
 
 	/* string representation of the report */
 	readonly attribute wstring reportText;
