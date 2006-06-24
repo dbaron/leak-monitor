@@ -40,7 +40,7 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
 	<Description about="urn:mozilla:install-manifest">
-		<em:id>{1ed6b678-1f93-4660-a9c5-01af87b323d3}</em:id>
+#expand		<em:id>__INSTALL_EXTENSION_ID__</em:id>
 #expand 		<em:version>__EXTENSION_VERSION__</em:version>
 		
 		<!-- Firefox -->
