@@ -55,7 +55,7 @@
 	<script type="application/x-javascript"
 	        src="chrome://leakmonitor/content/leakAlert.js" />
 
-	<label value="&leakAlert.explanation;" />
+	<description>&leakAlert.explanation;</description>
 
 	<tree id="lwjs-tree" flex="1" style="height: 10em; width: 30em">
 		<treecols>
