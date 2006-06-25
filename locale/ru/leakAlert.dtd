@@ -36,13 +36,13 @@
    -
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "Новая утечка">
-<!ENTITY leakAlert.explanation "Эти объекты JavaScript закрыты, но всё ещё продолжают держать в памяти свой код.">
-<!ENTITY leakAlert.reclaimed.title "Исправленное сообщение об утечке">
-<!ENTITY leakAlert.reclaimed.explanation "Сообщения об утечках объектов JavaScript уже были, но некоторые были исправлены. Следующие объекты всё ещё в памяти.">
-<!ENTITY leakAlert.copyReport "Копировать отчёт в Буфер обмена">
+<!ENTITY leakAlert.explanation "Эти объекты JavaScript принадлежат к закрытому окну, но всё ещё остаются в памяти.">
+<!ENTITY leakAlert.reclaimed.title "Поправка к сообщению об утечке">
+<!ENTITY leakAlert.reclaimed.explanation "Несколько объектов JavaScript из этого окна попали в список утечек, но после этого часть из их всё-таки была освобождена. Следующие объекты всё ещё в памяти.">
+<!ENTITY leakAlert.copyReport "Копировать отчёт в буфер обмена">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя Файла">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя файла">
 <!ENTITY leakAlert.lwjstree.columnLabel.linestart "Начало">
 <!ENTITY leakAlert.lwjstree.columnLabel.lineend "Конец">
 <!ENTITY leakAlert.lwjstree.columnLabel.string "Строковое представление">
