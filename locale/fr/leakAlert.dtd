@@ -37,8 +37,8 @@
    - ***** END LICENSE BLOCK ***** -->
 <!ENTITY leakAlert.title "Nouvel avertissement pour fuite de mémoire">
 <!ENTITY leakAlert.explanation "Les objets JavaScript suivants contenus dans une fenêtre récemment fermée sont encore stockés dans le code natif.">
-<!ENTITY leakAlert.reclaimed.title "Avertissement pour reprise de fuite de mémoire">
-<!ENTITY leakAlert.reclaimed.explanation "Les objets JavaScript de cette fenêtre ont été signalés précédemment comme ayant des fuites mais une partie de la mémoire a été récupérée. Les objets suivants présentent encore des fuites de mémoire.">
+<!ENTITY leakAlert.reclaimed.title "Avertissement pour récupération de fuite de mémoire">
+<!ENTITY leakAlert.reclaimed.explanation "Les objets JavaScript de cette fenêtre ont précédemment été signalés comme comportant des fuites mais une partie de la mémoire a été récupérée. Les objets suivants présentent encore des fuites de mémoire.">
 <!ENTITY leakAlert.copyReport "Copier le rapport vers le presse-papier">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Nom">
