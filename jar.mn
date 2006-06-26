@@ -4,9 +4,11 @@ leakmon.jar:
 % locale leakmonitor en-US %locale/en-US/
 % locale leakmonitor ru %locale/ru/
 % locale leakmonitor de %locale/de/
+% locale leakmonitor fr %locale/fr/
   content/leakAlert.xul
   content/leakAlert.js
   content/tree-utils.js
   locale/en-US/leakAlert.dtd
   locale/ru/leakAlert.dtd
   locale/de/leakAlert.dtd
+  locale/fr/leakAlert.dtd
