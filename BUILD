@@ -51,9 +51,7 @@ For each platform:
 	Execute the following commands (if your objdir is your srcdir,
 	you need to do the first one considerably earlier!):
 		rm -rf leak-monitor ../dist/xpi-stage/leak*
-		make makefiles DIRS=leak-monitor
-		cd leak-monitor
-		make
+		make MOZ_EXTENSIONS=leak-monitor
 
 	You now have the xpi for that platform in
 	<objdir>/dist/xpi-stage/leakmonitor-<version>.xpi
