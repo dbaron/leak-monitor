@@ -20,7 +20,7 @@
    -
    - Contributor(s):
    -   L. David Baron <dbaron@dbaron.org> (original author)
-   -   stoneflash <stoneflash@yandex.ru> (ru localization)
+   -   urko <urko.mail@gmail.com> (es-ES localization)
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,14 +35,14 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
-<!ENTITY leakAlert.title "Новая утечка">
-<!ENTITY leakAlert.explanation "Эти объекты JavaScript принадлежат к закрытому окну, но всё ещё остаются в памяти.">
-<!ENTITY leakAlert.reclaimed.title "Поправка к сообщению об утечке">
-<!ENTITY leakAlert.reclaimed.explanation "Несколько объектов JavaScript из этого окна попали в список утечек, но после этого часть из них всё-таки была освобождена. Следующие объекты всё ещё в памяти.">
-<!ENTITY leakAlert.copyReport "Копировать отчёт в буфер обмена">
+<!ENTITY leakAlert.title "Nuevo aviso de pérdida de memoria">
+<!ENTITY leakAlert.explanation "Los siguientes objetos de JavaScript de una ventana que acaba de ser cerrada todavía están retenidos por el código nativo.">
+<!ENTITY leakAlert.reclaimed.title "Aviso de pérdida de memoria recuperada">
+<!ENTITY leakAlert.reclaimed.explanation "Anteriormente se informó que algunos objetos JavaScript de esta ventana estaban retenidos, pero parte de la memoria se ha recuperado. Los siguientes objetos siguen estando retenidos.">
+<!ENTITY leakAlert.copyReport "Copiar informe a portapapeles">
 
-<!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя файла">
-<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Начало">
-<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Конец">
-<!ENTITY leakAlert.lwjstree.columnLabel.string "Строковое представление">
+<!ENTITY leakAlert.lwjstree.columnLabel.name "Nombre">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Nombre archivo">
+<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Inicio">
+<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Fin">
+<!ENTITY leakAlert.lwjstree.columnLabel.string "Representación de cadena">

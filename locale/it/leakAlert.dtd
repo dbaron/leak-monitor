@@ -20,7 +20,7 @@
    -
    - Contributor(s):
    -   L. David Baron <dbaron@dbaron.org> (original author)
-   -   stoneflash <stoneflash@yandex.ru> (ru localization)
+   -   Giuseppe Giardina <gonzalopirobutirro@libero.it> (it localization)
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,14 +35,14 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
-<!ENTITY leakAlert.title "Новая утечка">
-<!ENTITY leakAlert.explanation "Эти объекты JavaScript принадлежат к закрытому окну, но всё ещё остаются в памяти.">
-<!ENTITY leakAlert.reclaimed.title "Поправка к сообщению об утечке">
-<!ENTITY leakAlert.reclaimed.explanation "Несколько объектов JavaScript из этого окна попали в список утечек, но после этого часть из них всё-таки была освобождена. Следующие объекты всё ещё в памяти.">
-<!ENTITY leakAlert.copyReport "Копировать отчёт в буфер обмена">
+<!ENTITY leakAlert.title "Nuovo avviso di perdita di memoria">
+<!ENTITY leakAlert.explanation "I seguenti oggetti JavaScript, contenuti in una finestra chiusa di recente, sono ancora collegati al codice nativo.">
+<!ENTITY leakAlert.reclaimed.title "Avviso di recupero perdita di memoria">
+<!ENTITY leakAlert.reclaimed.explanation "I seguenti oggetti JavaScript, contenuti in una finestra chiusa di recente, sono ancora collegati, ma parte di questa memoria è stata recuperata. I seguenti oggetti stanno ancora provocando una perdita di memoria.">
+<!ENTITY leakAlert.copyReport "Copia negli appunti">
 
-<!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя файла">
-<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Начало">
-<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Конец">
-<!ENTITY leakAlert.lwjstree.columnLabel.string "Строковое представление">
+<!ENTITY leakAlert.lwjstree.columnLabel.name "Nome">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Nome file">
+<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Inizio">
+<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Fine">
+<!ENTITY leakAlert.lwjstree.columnLabel.string "Rappresentazione di stringa">

@@ -20,7 +20,7 @@
    -
    - Contributor(s):
    -   L. David Baron <dbaron@dbaron.org> (original author)
-   -   stoneflash <stoneflash@yandex.ru> (ru localization)
+   -   Norah <norahmarinkovic@gmail.com> (ja localization)
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,14 +35,14 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
-<!ENTITY leakAlert.title "Новая утечка">
-<!ENTITY leakAlert.explanation "Эти объекты JavaScript принадлежат к закрытому окну, но всё ещё остаются в памяти.">
-<!ENTITY leakAlert.reclaimed.title "Поправка к сообщению об утечке">
-<!ENTITY leakAlert.reclaimed.explanation "Несколько объектов JavaScript из этого окна попали в список утечек, но после этого часть из них всё-таки была освобождена. Следующие объекты всё ещё в памяти.">
-<!ENTITY leakAlert.copyReport "Копировать отчёт в буфер обмена">
+<!ENTITY leakAlert.title "リークが発生しています">
+<!ENTITY leakAlert.explanation "ウィンドウが閉じたにも関わらず以下の Javascript オブジェクトが破棄されずに残っています。">
+<!ENTITY leakAlert.reclaimed.title "リークが再利用されています">
+<!ENTITY leakAlert.reclaimed.explanation "このウィンドウで発生したリークされた JavaScript オブジェクトの一部が再利用されています。以下の物は現在もリークされています。">
+<!ENTITY leakAlert.copyReport "コピー">
 
-<!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя файла">
-<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Начало">
-<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Конец">
-<!ENTITY leakAlert.lwjstree.columnLabel.string "Строковое представление">
+<!ENTITY leakAlert.lwjstree.columnLabel.name "オブジェクト名">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "ファイル名">
+<!ENTITY leakAlert.lwjstree.columnLabel.linestart "開始">
+<!ENTITY leakAlert.lwjstree.columnLabel.lineend "終了">
+<!ENTITY leakAlert.lwjstree.columnLabel.string "ソースコードの概要">

@@ -20,7 +20,7 @@
    -
    - Contributor(s):
    -   L. David Baron <dbaron@dbaron.org> (original author)
-   -   stoneflash <stoneflash@yandex.ru> (ru localization)
+   -   Jaroslav Hanslík <kukulich@kukulich.net> (cs localization)
    -
    - Alternatively, the contents of this file may be used under the terms of
    - either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -35,14 +35,14 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
-<!ENTITY leakAlert.title "Новая утечка">
-<!ENTITY leakAlert.explanation "Эти объекты JavaScript принадлежат к закрытому окну, но всё ещё остаются в памяти.">
-<!ENTITY leakAlert.reclaimed.title "Поправка к сообщению об утечке">
-<!ENTITY leakAlert.reclaimed.explanation "Несколько объектов JavaScript из этого окна попали в список утечек, но после этого часть из них всё-таки была освобождена. Следующие объекты всё ещё в памяти.">
-<!ENTITY leakAlert.copyReport "Копировать отчёт в буфер обмена">
+<!ENTITY leakAlert.title "Nová výstraha úniku paměti">
+<!ENTITY leakAlert.explanation "Následující javaskriptové objekty z okna, které bylo nedávno zavřeno, jsou stále drženy nativním kódem.">
+<!ENTITY leakAlert.reclaimed.title "Znovu požadované úniky">
+<!ENTITY leakAlert.reclaimed.explanation "Javaskriptové objekty z tohoto okna byly předčasně označeny jako úniky paměti, ale část této paměti byla znovu vyžadována. Následující objekty stále unikají.">
+<!ENTITY leakAlert.copyReport "Zkopírovat zprávu do schránky">
 
-<!ENTITY leakAlert.lwjstree.columnLabel.name "Имя">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Имя файла">
-<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Начало">
-<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Конец">
-<!ENTITY leakAlert.lwjstree.columnLabel.string "Строковое представление">
+<!ENTITY leakAlert.lwjstree.columnLabel.name "Jméno">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Jméno souboru">
+<!ENTITY leakAlert.lwjstree.columnLabel.linestart "Začátek">
+<!ENTITY leakAlert.lwjstree.columnLabel.lineend "Konec">
+<!ENTITY leakAlert.lwjstree.columnLabel.string "Textové vyjádření">
