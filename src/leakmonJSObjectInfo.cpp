@@ -71,15 +71,20 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 
 NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 
+static const PRUnichar kUndefined[] = {'u','n','d','e','f','i','n','e','d',0};
+static const PRUnichar kNull[] = {'n','u','l','l',0};
+static const PRUnichar kTrue[] = {'t','r','u','e',0};
+static const PRUnichar kFalse[] = {'f','a','l','s','e',0};
+
+#define STRLEN_ARRAY(a_) (sizeof(a_)/sizeof((a_)[0]) - 1)
+
 static void
 ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 {
-	aString.Truncate();
-
 	if (JSVAL_IS_VOID(aJSValue)) {
-		aString.AssignLiteral("undefined");
+		aString.Assign(kUndefined, STRLEN_ARRAY(kUndefined));
 	} else if (JSVAL_IS_NULL(aJSValue)) {
-		aString.AssignLiteral("null");
+		aString.Assign(kNull, STRLEN_ARRAY(kNull));
 	} else if (JSVAL_IS_INT(aJSValue)) {
 		jsint i = JSVAL_TO_INT(aJSValue);
 		char buf[20];
@@ -93,9 +98,9 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 	} else if (JSVAL_IS_BOOLEAN(aJSValue)) {
 		JSBool b = JSVAL_TO_BOOLEAN(aJSValue);
 		if (b)
-			aString.AssignLiteral("true");
+			aString.Assign(kTrue, STRLEN_ARRAY(kTrue));
 		else
-			aString.AssignLiteral("false");
+			aString.Assign(kFalse, STRLEN_ARRAY(kFalse));
 	} else if (JSVAL_IS_STRING(aJSValue)) {
 		JSString *str = JSVAL_TO_STRING(aJSValue);
 		jschar *chars = JS_GetStringChars(str);
@@ -110,7 +115,7 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 	} else {
 		JSObject *obj = JSVAL_TO_OBJECT(aJSValue);
 		JSClass *clazz = JS_GetClass(cx, obj);
-		aString.Append(PRUnichar('['));
+		aString.Assign(PRUnichar('['));
 		aString.Append(NS_ConvertASCIItoUTF16(clazz->name));
 		aString.Append(PRUnichar(']'));
 	}
