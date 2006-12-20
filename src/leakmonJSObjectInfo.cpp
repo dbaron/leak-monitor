@@ -246,8 +246,13 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	JSBool ok = JS_IdToValue(cx, mProperties->vector[aIndex], &n);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
+	// n should be an integer, a string, or an XML QName, AttributeName,
+	// or AnyName
+
 	// XXX This can execute JS code!  How bad is that?
 	// shaver didn't seem too scared when I described it to him.
+	// XXX Could I avoid JS_ValueToString and still handle XML objects
+	// correctly?
 	JSString *nstr = JS_ValueToString(cx, n);
 	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
 
