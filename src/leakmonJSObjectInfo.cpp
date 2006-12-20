@@ -71,6 +71,51 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 
 NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
 
+static void
+ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
+{
+	aString.Truncate();
+
+	if (JSVAL_IS_VOID(aJSValue)) {
+		aString.AssignLiteral("undefined");
+	} else if (JSVAL_IS_NULL(aJSValue)) {
+		aString.AssignLiteral("null");
+	} else if (JSVAL_IS_INT(aJSValue)) {
+		jsint i = JSVAL_TO_INT(aJSValue);
+		char buf[20];
+		PR_snprintf(buf, sizeof(buf), "%d", i);
+		aString.Assign(NS_ConvertASCIItoUTF16(buf));
+	} else if (JSVAL_IS_DOUBLE(aJSValue)) {
+		jsdouble *d = JSVAL_TO_DOUBLE(aJSValue);
+		char buf[50];
+		PR_snprintf(buf, sizeof(buf), "%f", *d);
+		aString.Assign(NS_ConvertASCIItoUTF16(buf));
+	} else if (JSVAL_IS_BOOLEAN(aJSValue)) {
+		JSBool b = JSVAL_TO_BOOLEAN(aJSValue);
+		if (b)
+			aString.AssignLiteral("true");
+		else
+			aString.AssignLiteral("false");
+	} else if (JSVAL_IS_STRING(aJSValue)) {
+		JSString *str = JSVAL_TO_STRING(aJSValue);
+		jschar *chars = JS_GetStringChars(str);
+		NS_ASSERTION(chars, "out of memory");
+		if (chars) {
+			size_t len = JS_GetStringLength(str);
+
+			NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar),
+						 "char size mismatch");
+			aString.Assign(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
+		}
+	} else {
+		JSObject *obj = JSVAL_TO_OBJECT(aJSValue);
+		JSClass *clazz = JS_GetClass(cx, obj);
+		aString.Append(PRUnichar('['));
+		aString.Append(NS_ConvertASCIItoUTF16(clazz->name));
+		aString.Append(PRUnichar(']'));
+	}
+}
+
 nsresult
 leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 {
@@ -107,17 +152,7 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 		}
 	}
 
-	// XXX This can execute JS code!  How bad is that?
-	// shaver didn't seem too scared when I described it to him.
-	JSString *str = JS_ValueToString(cx, mJSValue);
-	NS_ENSURE_TRUE(str, NS_ERROR_OUT_OF_MEMORY);
-
-	jschar *chars = JS_GetStringChars(str);
-	NS_ENSURE_TRUE(chars, NS_ERROR_OUT_OF_MEMORY);
-	size_t len = JS_GetStringLength(str);
-
-	NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar), "char size mismatch");
-	mString.Assign(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
+	ValueToString(cx, mJSValue, mString);
 
 	return NS_OK;
 }
