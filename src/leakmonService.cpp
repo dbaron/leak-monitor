@@ -148,17 +148,17 @@ NS_IMETHODIMP
 leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
                         const PRUnichar *aData)
 {
-	if (!strcmp(aTopic, gQuitApplicationTopic)) {
+	if (!PL_strcmp(aTopic, gQuitApplicationTopic)) {
 		mHaveQuitApp = PR_TRUE;
-	} else if (!strcmp(aTopic, APPSTARTUP_TOPIC)) {
-	} else if (!strcmp(aTopic, "cycle-collector-begin")) {
+	} else if (!PL_strcmp(aTopic, APPSTARTUP_TOPIC)) {
+	} else if (!PL_strcmp(aTopic, "cycle-collector-begin")) {
 		// We want to call DidGC once cycle collection is done.  So
 		// we'll make a timer.
 		if (!mTimer) {
 			mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
 			mTimer->Init(this, 0, nsITimer::TYPE_ONE_SHOT);
 		}
-	} else if (!strcmp(aTopic, NS_TIMER_CALLBACK_TOPIC)) {
+	} else if (!PL_strcmp(aTopic, NS_TIMER_CALLBACK_TOPIC)) {
 		mTimer = nsnull;
 		DidGC();
 	} else {
@@ -292,29 +292,40 @@ leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 		parent = JS_GetParent(mJSContext, global);
 	} while (parent);
 
+	JSClass *clazz = JS_GET_CLASS(mJSContext, global);
+
+	if (PL_strcmp(clazz->name, "Window") != 0 &&
+	    PL_strcmp(clazz->name, "ChromeWindow") != 0) {
+	    // Global is not a window.
+	    return;
+	}
+
 	jsval comp;
 	PRBool hasComponents =
 		JS_GetProperty(mJSContext, global, "Components", &comp) &&
 		JS_TypeOfValue(mJSContext, comp) == JSTYPE_OBJECT;
 
-	if (!hasComponents) {
-		JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
-			PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
-		if (!entry) {
-			NS_WARNING("out of memory");
-			return;
-		}
+	if (hasComponents) {
+		// It's still live, so don't worry about leaks.
+		return;
+	}
 
-		if (!entry->global) {
-			entry->global = global;
-			entry->prevRootCount = PR_UINT32_MAX;
-		}
-		entry->generation = mGeneration;
+	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+		PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
+	if (!entry) {
+		NS_WARNING("out of memory");
+		return;
+	}
 
-		entry->roots.AppendElement(aRoot);
-		if (!entry->notified) {
-			*aHaveLeaks = PR_TRUE;
-		}
+	if (!entry->global) {
+		entry->global = global;
+		entry->prevRootCount = PR_UINT32_MAX;
+	}
+	entry->generation = mGeneration;
+
+	entry->roots.AppendElement(aRoot);
+	if (!entry->notified) {
+		*aHaveLeaks = PR_TRUE;
 	}
 }
 
