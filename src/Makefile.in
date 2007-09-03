@@ -54,6 +54,7 @@ REQUIRES	= \
 		  xpconnect \
 		  embedcomponents \
 		  dom \
+		  xulapp \
 		  $(NULL)
 
 DEFINES		+= -DMOZILLA_STRICT_API

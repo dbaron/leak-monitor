@@ -37,7 +37,8 @@
 
 #include "nsISupports.idl"
 
-[scriptable, uuid(03151c5c-6203-405f-8bd7-72406176e480)]
+[scriptable, uuid(ba7f9cee-6977-4029-82f1-bc2b83c87223)]
 interface leakmonIService : nsISupports
 {
+	readonly attribute boolean buildHasCycleCollector;
 };

@@ -48,11 +48,16 @@
 #include "nsIObserverService.h"
 #include "nsIWindowWatcher.h"
 #include "nsIDOMWindow.h"
+#include "nsIXULAppInfo.h"
+
+// Frozen APIs that require linking against NSPR.
+#include "plstr.h"
 
 // XPCOM glue APIs
 #include "nsDebug.h"
 #include "nsMemory.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStringAPI.h"
 
 // Unfrozen APIs that shouldn't hurt
 // filed https://bugzilla.mozilla.org/show_bug.cgi?id=335977
@@ -102,6 +107,29 @@ NS_IMPL_ISUPPORTS3(leakmonService,
                    leakmonIService,
                    nsIObserver,
                    nsISupportsWeakReference)
+
+NS_IMETHODIMP
+leakmonService::GetBuildHasCycleCollector(PRBool *aResult)
+{
+	nsresult rv;
+	nsCOMPtr<nsIXULAppInfo> appInfo =
+		do_GetService("@mozilla.org/xre/app-info;1", &rv);
+	NS_ENSURE_SUCCESS(rv, rv);
+
+	nsCString versionStr, buildidStr;
+	appInfo->GetPlatformVersion(versionStr);
+	appInfo->GetPlatformBuildID(buildidStr);
+
+	// We support a minimum of the 1.8 branch.  If we're on the 1.8
+	// branch, the result should be false.  Otherwise, it should be true
+	// if the build ID is at least 2007010415 (when the cycle collector
+	// landed).
+	const char *version = versionStr.get(), *buildid = buildidStr.get();
+	*aResult = (version[0] != '1' || version[1] != '.' || version[2] != '8' ||
+			    ('0' <= version[3] && version[3] <= '9')) &&
+		       PL_strcmp(buildid, "2007010415") >= 0;
+	return NS_OK;
+}
 
 NS_IMETHODIMP
 leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
