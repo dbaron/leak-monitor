@@ -64,7 +64,9 @@ public:
 
 private:
 	jsval mJSValue;
-	JSIdArray* mProperties;
+
+	JSIdArray** mProperties;
+	PRUint32 mNumPropertiesArrays;
 
 	nsString mName;
 	nsString mFileName;

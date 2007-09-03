@@ -50,6 +50,7 @@
 
 leakmonJSObjectInfo::leakmonJSObjectInfo()
 	: mProperties(nsnull)
+	, mNumPropertiesArrays(0)
 	, mLineStart(0)
 	, mLineEnd(0)
 {
@@ -64,7 +65,9 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 	if (cx) {
 		JSVAL_UNLOCK(cx, mJSValue);
 		if (mProperties) {
-			JS_DestroyIdArray(cx, mProperties);
+			for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
+				JS_DestroyIdArray(cx, mProperties[i]);
+			delete [] mProperties;
 		}
 	}
 }
@@ -139,8 +142,20 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
-		mProperties = JS_Enumerate(cx, obj);
-		NS_ENSURE_TRUE(mProperties, NS_ERROR_OUT_OF_MEMORY);
+		JSObject *p;
+
+		PRUint32 protoChainLength = 0;
+		for (p = obj; p; p = JS_GetPrototype(cx, p))
+			++protoChainLength;
+		mProperties = new JSIdArray*[protoChainLength];
+		mNumPropertiesArrays = protoChainLength;
+
+		PRUint32 protoChainIndex = 0;
+		PRBool fail = PR_FALSE;
+		for (p = obj; p; p = JS_GetPrototype(cx, p))
+			if (!(mProperties[protoChainIndex++] = JS_Enumerate(cx, p)))
+				fail = PR_TRUE;
+		NS_ENSURE_TRUE(!fail, NS_ERROR_OUT_OF_MEMORY);
 
 		if (JS_ObjectIsFunction(cx, obj)) {
 			JSFunction *fun = JS_ValueToFunction(cx, mJSValue);
@@ -231,7 +246,10 @@ leakmonJSObjectInfo::GetStringRep(PRUnichar **aResult)
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetNumProperties(PRUint32 *aResult)
 {
-	*aResult = mProperties ? mProperties->length : 0;
+	PRUint32 result = 0;
+	for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
+		result += mProperties[i]->length;
+	*aResult = result;
 	return NS_OK;
 }
 
@@ -239,8 +257,18 @@ NS_IMETHODIMP
 leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
                                    leakmonIJSObjectInfo **aResult)
 {
-	NS_ENSURE_TRUE(mProperties && aIndex < PRUint32(mProperties->length),
-	               NS_ERROR_INVALID_ARG);
+	jsid id;
+	PRUint32 propertiesIndex = 0;
+	while (PR_TRUE) {
+		NS_ENSURE_TRUE(propertiesIndex < mNumPropertiesArrays,
+				       NS_ERROR_INVALID_ARG); // aIndex out of bounds
+		JSIdArray *a = mProperties[propertiesIndex];
+		if (aIndex < PRUint32(a->length)) {
+			id = a->vector[aIndex];
+			break;
+		}
+		aIndex -= a->length;
+	}
 	NS_ASSERTION(!JSVAL_IS_PRIMITIVE(mJSValue),
 	             "shouldn't have set mProperties");
 
@@ -248,7 +276,7 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
 	jsval n;
-	JSBool ok = JS_IdToValue(cx, mProperties->vector[aIndex], &n);
+	JSBool ok = JS_IdToValue(cx, id, &n);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
 	// n should be an integer, a string, or an XML QName, AttributeName,
