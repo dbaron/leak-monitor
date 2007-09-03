@@ -148,6 +148,9 @@ private:
 	typedef PRUint32 NotifyType; // specifically, the reason constants
 	                             // on leakmonIReport
 	NS_HIDDEN_(nsresult) NotifyLeaks(JSObject *aGlobalObject, NotifyType aType);
+	PR_STATIC_CALLBACK(PLDHashOperator)
+		AppendToArray(PLDHashTable *table, PLDHashEntryHdr *hdr,
+		              PRUint32 number, void *arg);
 
 	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
 	JSRuntime *mJSRuntime;

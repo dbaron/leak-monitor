@@ -228,10 +228,14 @@ leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 // Only create entries if they don't have a Components object.
 struct JSScopeInfoEntry : public PLDHashEntryHdr {
 	JSObject *global; // key must be first to match PLDHashEntryStub
-	nsVoidArray roots;
-	PRInt32 prevRootCount;
+	PLDHashTable roots;
+	PRUint32 prevRootCount;
 	PRPackedBool generation; // we let it wrap at one bit
 	PRPackedBool notified;
+};
+
+struct RootsEntry : public PLDHashEntryHdr {
+	void *key; // key must be first to match PLDHashEntryStub
 };
 
 /* static */ PLDHashOperator PR_CALLBACK
@@ -241,7 +245,7 @@ leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
 
-	if (!entry->notified && entry->roots.Count()) {
+	if (!entry->notified && entry->roots.entryCount) {
 		entry->notified = PR_TRUE;
 		service->NotifyLeaks(entry->global, leakmonIReport::NEW_LEAKS);
 	}
@@ -320,10 +324,20 @@ leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 	if (!entry->global) {
 		entry->global = global;
 		entry->prevRootCount = PR_UINT32_MAX;
+		PL_DHashTableInit(&entry->roots, PL_DHashGetStubOps(), nsnull,
+		                  sizeof(RootsEntry), 16);
 	}
 	entry->generation = mGeneration;
 
-	entry->roots.AppendElement(aRoot);
+	RootsEntry *rootEntry = NS_STATIC_CAST(RootsEntry*,
+		PL_DHashTableOperate(&entry->roots, aRoot, PL_DHASH_ADD));
+	if (!rootEntry) {
+		NS_WARNING("out of memory");
+		return;
+	}
+	NS_ASSERTION(rootEntry->key == nsnull || rootEntry->key == aRoot,
+	             "wrong entry");
+	rootEntry->key = aRoot;
 	if (!entry->notified) {
 		*aHaveLeaks = PR_TRUE;
 	}
@@ -369,8 +383,10 @@ leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	entry->prevRootCount = entry->roots.Count();
-	entry->roots.Clear();
+	entry->prevRootCount = entry->roots.entryCount;
+	PL_DHashTableFinish(&entry->roots);
+	PL_DHashTableInit(&entry->roots, PL_DHashGetStubOps(), nsnull,
+	                  sizeof(RootsEntry), 16);
 	return PL_DHASH_NEXT;
 }
 
@@ -387,7 +403,7 @@ leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		return PL_DHASH_REMOVE;
 	}
 	if (entry->notified &&
-	    entry->prevRootCount != entry->roots.Count()) {
+	    entry->prevRootCount != entry->roots.entryCount) {
 		service->mReclaimWindows.AppendElement(entry->global);
 	}
 	return PL_DHASH_NEXT;
@@ -400,7 +416,7 @@ leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
 	if (!entry->notified) {
-		PRInt32 count = entry->roots.Count();
+		PRUint32 count = entry->roots.entryCount;
 		if (count != entry->prevRootCount) {
 			*needNewGC = PR_TRUE;
 			return PL_DHASH_STOP;
@@ -460,6 +476,18 @@ leakmonService::BuildContextInfo()
 	// variables that point to wrapped natives???
 }
 
+/* static */ PLDHashOperator PR_CALLBACK
+leakmonService::AppendToArray(PLDHashTable *table, PLDHashEntryHdr *hdr,
+                              PRUint32 number, void *arg)
+{
+	nsVoidArray *array = NS_STATIC_CAST(nsVoidArray*, arg);
+	RootsEntry *entry = NS_STATIC_CAST(RootsEntry*, hdr);
+
+	array->AppendElement(entry->key);
+
+	return PL_DHASH_NEXT;
+}
+
 nsresult
 leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 {
@@ -471,20 +499,18 @@ leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
 		PL_DHashTableOperate(&mJSScopeInfo, aGlobalObject, PL_DHASH_LOOKUP));
-	nsVoidArray empty;
-	const nsVoidArray *leaks;
+	nsVoidArray leaks;
 	if (PL_DHASH_ENTRY_IS_BUSY(entry)) {
-		leaks = &entry->roots;
+		PL_DHashTableEnumerate(&entry->roots, AppendToArray, &leaks);
 	} else {
 		NS_ASSERTION(aType != leakmonIReport::NEW_LEAKS,
 		             "should be in table");
-		leaks = &empty;
 	}
 
 	leakmonReport *report = new leakmonReport();
 	NS_ENSURE_TRUE(report, NS_ERROR_OUT_OF_MEMORY);
 	nsCOMPtr<leakmonIReport> reportI = report;
-	rv = report->Init(aGlobalObject, aType, *leaks);
+	rv = report->Init(aGlobalObject, aType, leaks);
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	if (!mHaveQuitApp) {
