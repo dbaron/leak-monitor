@@ -268,6 +268,7 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 			break;
 		}
 		aIndex -= a->length;
+		++propertiesIndex;
 	}
 	NS_ASSERTION(!JSVAL_IS_PRIMITIVE(mJSValue),
 	             "shouldn't have set mProperties");
