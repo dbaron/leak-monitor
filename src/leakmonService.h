@@ -58,6 +58,7 @@
 
 // Unfrozen APIs (XXX should unroll these, per-version)
 #include "nsIJSRuntimeService.h"
+#include "nsITimer.h"
 
 // XPCOM glue APIs
 #include "nsCOMPtr.h"
@@ -123,6 +124,7 @@ private:
 	                       // somebody else's.
 	PLDHashTable mJSScopeInfo;
 	PRThread *mMainThread;
+	nsCOMPtr<nsITimer> mTimer;
 	nsVoidArray mReclaimWindows;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed

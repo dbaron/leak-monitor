@@ -56,6 +56,7 @@
 // XPCOM glue APIs
 #include "nsDebug.h"
 #include "nsMemory.h"
+#include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringAPI.h"
 
@@ -123,11 +124,16 @@ leakmonService::GetBuildHasCycleCollector(PRBool *aResult)
 	// We support a minimum of the 1.8 branch.  If we're on the 1.8
 	// branch, the result should be false.  Otherwise, it should be true
 	// if the build ID is at least 2007010415 (when the cycle collector
-	// landed).
+	// landed).  But, actually, we need the cycle-collector-begin
+	// notification which landed starting in builds 2007051014.  So act
+	// like the cycle collector wasn't present in builds between those
+	// dates, since the failure mode of being way too noisy is better
+	// than the failure mode of being way too quiet (for a tool like
+	// this, I think).
 	const char *version = versionStr.get(), *buildid = buildidStr.get();
 	*aResult = (version[0] != '1' || version[1] != '.' || version[2] != '8' ||
 			    ('0' <= version[3] && version[3] <= '9')) &&
-		       PL_strcmp(buildid, "2007010415") >= 0;
+		       PL_strcmp(buildid, "2007051014") >= 0;
 	return NS_OK;
 }
 
@@ -138,6 +144,16 @@ leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
 	if (!strcmp(aTopic, gQuitApplicationTopic)) {
 		mHaveQuitApp = PR_TRUE;
 	} else if (!strcmp(aTopic, APPSTARTUP_TOPIC)) {
+	} else if (!strcmp(aTopic, "cycle-collector-begin")) {
+		// We want to call DidGC once cycle collection is done.  So
+		// we'll make a timer.
+		if (!mTimer) {
+			mTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+			mTimer->Init(this, 0, nsITimer::TYPE_ONE_SHOT);
+		}
+	} else if (!strcmp(aTopic, NS_TIMER_CALLBACK_TOPIC)) {
+		mTimer = nsnull;
+		DidGC();
 	} else {
 		NS_NOTREACHED("bad topic");
 	}
@@ -165,14 +181,23 @@ leakmonService::Init()
 	mJSContext = JS_NewContext(mJSRuntime, 256);
 	NS_ENSURE_TRUE(mJSContext, NS_ERROR_OUT_OF_MEMORY);
 
-	gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
-
 	nsCOMPtr<nsIObserverService> os =
 		do_GetService("@mozilla.org/observer-service;1", &rv);
 	NS_ENSURE_SUCCESS(rv, rv);
 
 	rv = os->AddObserver(this, gQuitApplicationTopic, PR_TRUE);
 	NS_ENSURE_SUCCESS(rv, rv);
+
+	PRBool buildHasCycleCollector;
+	rv = GetBuildHasCycleCollector(&buildHasCycleCollector);
+	NS_ENSURE_SUCCESS(rv, rv);
+
+	if (buildHasCycleCollector) {
+		rv = os->AddObserver(this, "cycle-collector-begin", PR_TRUE);
+		NS_ENSURE_SUCCESS(rv, rv);
+	} else {
+		gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
+	}
 
 	return NS_OK;
 }
