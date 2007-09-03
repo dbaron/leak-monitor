@@ -68,6 +68,34 @@
 // XPCOM glue APIs in 1.9, but included in this extension
 #include "nsVoidArray.h"
 
+extern "C" {
+	/* a copy of JSTracer, only available in some versions we support */
+
+	struct leakmonJSTracer;
+
+	typedef void
+	(* JS_DLL_CALLBACK leakmonJSTraceCallback)(leakmonJSTracer *trc,
+	                                           void *thing, uint32 kind);
+
+	struct leakmonJSTracer;
+	typedef void
+	(* JS_DLL_CALLBACK leakmonJSTraceNamePrinter)(leakmonJSTracer *trc,
+	                                              char *buf, size_t bufsize);
+
+	struct leakmonJSTracer {
+		JSContext                  *context;
+		leakmonJSTraceCallback     callback;
+
+		/* always include the DEBUG parts */
+		leakmonJSTraceNamePrinter  debugPrinter;
+		const void                 *debugPrintArg;
+		size_t                     debugPrintIndex;
+	};
+
+	typedef JS_PUBLIC_API(void)
+	(*leakmonJS_TraceRuntimeFunc)(leakmonJSTracer *trc);
+}
+
 class leakmonService : public leakmonIService,
                        public nsIObserver,
                        public nsSupportsWeakReference {
@@ -98,8 +126,12 @@ private:
 	PR_STATIC_CALLBACK(PLDHashOperator)
 		ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		            PRUint32 number, void *arg);
+	void HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks);
+	JS_STATIC_DLL_CALLBACK(void)
+		GCRootTracer(leakmonJSTracer *trc, void *thing, uint32 kind);
 	JS_STATIC_DLL_CALLBACK(intN)
-		FindXPCGCRoots(void *rp, const char *name, void *data);
+		GCRootMapper(void *rp, const char *name, void *data);
+
 	PR_STATIC_CALLBACK(PLDHashOperator)
 		ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		                 PRUint32 number, void *arg);
@@ -125,6 +157,7 @@ private:
 	PLDHashTable mJSScopeInfo;
 	PRThread *mMainThread;
 	nsCOMPtr<nsITimer> mTimer;
+	leakmonJS_TraceRuntimeFunc mJS_TraceRuntime;
 	nsVoidArray mReclaimWindows;
 
 	PRPackedBool mGeneration; // let it wrap after 1 bit, since that's all that's needed

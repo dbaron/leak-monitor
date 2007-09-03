@@ -52,6 +52,7 @@
 
 // Frozen APIs that require linking against NSPR.
 #include "plstr.h"
+#include "prlink.h"
 
 // XPCOM glue APIs
 #include "nsDebug.h"
@@ -85,6 +86,12 @@ leakmonService::leakmonService()
 	mJSScopeInfo.ops = nsnull;
 	// This assumes we're always created on the main thread.
 	mMainThread = PR_GetCurrentThread();
+
+	PRLibrary *lib;
+	mJS_TraceRuntime = NS_REINTERPRET_CAST(leakmonJS_TraceRuntimeFunc,
+		PR_FindFunctionSymbolAndLibrary("JS_TraceRuntime", &lib));
+	if (mJS_TraceRuntime)
+		PR_UnloadLibrary(lib);
 }
 
 leakmonService::~leakmonService()
@@ -218,12 +225,12 @@ leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
 	return result;
 }
 
+// Only create entries if they don't have a Components object.
 struct JSScopeInfoEntry : public PLDHashEntryHdr {
 	JSObject *global; // key must be first to match PLDHashEntryStub
-	nsVoidArray rootedXPCWJSs;
-	PRInt32 prevRootedXPCWJSCount;
+	nsVoidArray roots;
+	PRInt32 prevRootCount;
 	PRPackedBool generation; // we let it wrap at one bit
-	PRPackedBool hasComponents;
 	PRPackedBool notified;
 };
 
@@ -234,8 +241,7 @@ leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
 
-	if (!entry->hasComponents && !entry->notified &&
-	    entry->rootedXPCWJSs.Count()) {
+	if (!entry->notified && entry->roots.Count()) {
 		entry->notified = PR_TRUE;
 		service->NotifyLeaks(entry->global, leakmonIReport::NEW_LEAKS);
 	}
@@ -277,16 +283,73 @@ leakmonService::DidGC()
 	mReclaimWindows.Clear();
 }
 
-/* static */ intN JS_DLL_CALLBACK
-leakmonService::FindXPCGCRoots(void *rp, const char *name, void *data)
+void
+leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 {
-	nsVoidArray *array = NS_STATIC_CAST(nsVoidArray*, data);
+	JSObject *global, *parent = aRoot;
+	do {
+		global = parent;
+		parent = JS_GetParent(mJSContext, global);
+	} while (parent);
 
-	static const char wrapped_js_root_name[] = "nsXPCWrappedJS::mJSObj";
-	if (!strncmp(name, wrapped_js_root_name, sizeof(wrapped_js_root_name)-1)) {
-		PRBool ok = array->AppendElement(*NS_STATIC_CAST(JSObject**, rp));
-		NS_ASSERTION(ok, "not handling this out of memory case");
+	jsval comp;
+	PRBool hasComponents =
+		JS_GetProperty(mJSContext, global, "Components", &comp) &&
+		JS_TypeOfValue(mJSContext, comp) == JSTYPE_OBJECT;
+
+	if (!hasComponents) {
+		JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+			PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
+		if (!entry) {
+			NS_WARNING("out of memory");
+			return;
+		}
+
+		if (!entry->global) {
+			entry->global = global;
+			entry->prevRootCount = PR_UINT32_MAX;
+		}
+		entry->generation = mGeneration;
+
+		entry->roots.AppendElement(aRoot);
+		if (!entry->notified) {
+			*aHaveLeaks = PR_TRUE;
+		}
 	}
+}
+
+struct FindGCRootData {
+	leakmonService *service;
+	PRBool haveLeaks;
+};
+
+struct TracerWithData : public leakmonJSTracer {
+	FindGCRootData *data;
+};
+
+/* static */ void JS_DLL_CALLBACK
+leakmonService::GCRootTracer(leakmonJSTracer *trc, void *thing, uint32 kind)
+{
+	FindGCRootData *data = NS_STATIC_CAST(TracerWithData*, trc)->data;
+
+	if (kind == 0 /* JSTRACE_OBJECT */ ||
+	    kind == 4 /* JSTRACE_NAMESPACE */ ||
+	    kind == 5 /* JSTRACE_QNAME */ ||
+	    kind == 6 /* JSTRACE_XML */)
+		data->service->HandleRoot(NS_STATIC_CAST(JSObject*, thing),
+		                          &data->haveLeaks);
+}
+
+/* static */ intN JS_DLL_CALLBACK
+leakmonService::GCRootMapper(void *rp, const char *name, void *aData)
+{
+	FindGCRootData *data = NS_STATIC_CAST(FindGCRootData*, aData);
+
+	jsval *vp = NS_STATIC_CAST(jsval*, rp);
+	jsval v = *vp;
+	if (!JSVAL_IS_PRIMITIVE(v))
+		data->service->HandleRoot(JSVAL_TO_OBJECT(v), &data->haveLeaks);
+
 	return JS_MAP_GCROOT_NEXT;
 }
 
@@ -295,8 +358,8 @@ leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	entry->prevRootedXPCWJSCount = entry->rootedXPCWJSs.Count();
-	entry->rootedXPCWJSs.Clear();
+	entry->prevRootCount = entry->roots.Count();
+	entry->roots.Clear();
 	return PL_DHASH_NEXT;
 }
 
@@ -313,7 +376,7 @@ leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		return PL_DHASH_REMOVE;
 	}
 	if (entry->notified &&
-	    entry->prevRootedXPCWJSCount != entry->rootedXPCWJSs.Count()) {
+	    entry->prevRootCount != entry->roots.Count()) {
 		service->mReclaimWindows.AppendElement(entry->global);
 	}
 	return PL_DHASH_NEXT;
@@ -325,9 +388,9 @@ leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
 {
 	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
 	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
-	if (!entry->hasComponents && !entry->notified) {
-		PRInt32 count = entry->rootedXPCWJSs.Count();
-		if (count != entry->prevRootedXPCWJSCount) {
+	if (!entry->notified) {
+		PRInt32 count = entry->roots.Count();
+		if (count != entry->prevRootCount) {
 			*needNewGC = PR_TRUE;
 			return PL_DHASH_STOP;
 		}
@@ -348,43 +411,24 @@ leakmonService::BuildContextInfo()
 
 	PL_DHashTableEnumerate(&mJSScopeInfo, ResetRootedLists, nsnull);
 
-	// Find all the XPConnect wrapped JavaScript objects that are rooted
-	// (i.e., owned by native code).
-	nsVoidArray xpcGCRoots; // of JSObject*
-	JS_MapGCRoots(mJSRuntime, FindXPCGCRoots, &xpcGCRoots);
-
-	PRBool haveLeaks = PR_FALSE;
-
-	PRInt32 i;
-	for (i = xpcGCRoots.Count() - 1; i >= 0; --i) {
-		JSObject *rootedObj = NS_STATIC_CAST(JSObject*, xpcGCRoots[i]);
-
-		JSObject *global, *parent = rootedObj;
-		do {
-			global = parent;
-			parent = JS_GetParent(mJSContext, global);
-		} while (parent);
-
-		JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
-			PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
-		NS_ENSURE_TRUE(entry, NS_ERROR_OUT_OF_MEMORY);
-
-		if (!entry->global) {
-			entry->global = global;
-			entry->prevRootedXPCWJSCount = PR_UINT32_MAX;
-		}
-		entry->generation = mGeneration;
-
-		jsval comp;
-		entry->hasComponents =
-			JS_GetProperty(mJSContext, global, "Components", &comp) &&
-			JS_TypeOfValue(mJSContext, comp) == JSTYPE_OBJECT;
-
-		entry->rootedXPCWJSs.AppendElement(rootedObj);
-		if (!entry->hasComponents && !entry->notified) {
-			haveLeaks = PR_TRUE;
-		}
+	// Find all GC roots in closed windows.
+	FindGCRootData data;
+	data.service = this;
+	data.haveLeaks = PR_FALSE;
+	if (mJS_TraceRuntime) {
+		TracerWithData trc;
+		trc.context = mJSContext;
+		trc.callback = GCRootTracer;
+		trc.debugPrinter = NULL;
+		trc.debugPrintArg = NULL;
+		trc.debugPrintIndex = (size_t)-1;
+		trc.data = &data;
+		(*mJS_TraceRuntime)(&trc);
+	} else {
+		JS_MapGCRoots(mJSRuntime, GCRootMapper, &data);
 	}
+
+	PRBool haveLeaks = data.haveLeaks;
 
 	PRUint32 oldCount = mJSScopeInfo.entryCount;
 	PL_DHashTableEnumerate(&mJSScopeInfo, RemoveDeadScopes, this);
@@ -419,7 +463,7 @@ leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 	nsVoidArray empty;
 	const nsVoidArray *leaks;
 	if (PL_DHASH_ENTRY_IS_BUSY(entry)) {
-		leaks = &entry->rootedXPCWJSs;
+		leaks = &entry->roots;
 	} else {
 		NS_ASSERTION(aType != leakmonIReport::NEW_LEAKS,
 		             "should be in table");
