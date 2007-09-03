@@ -66,7 +66,8 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 		JSVAL_UNLOCK(cx, mJSValue);
 		if (mProperties) {
 			for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
-				JS_DestroyIdArray(cx, mProperties[i]);
+				if (mProperties[i])
+					JS_DestroyIdArray(cx, mProperties[i]);
 			delete [] mProperties;
 		}
 	}
@@ -151,11 +152,8 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 		mNumPropertiesArrays = protoChainLength;
 
 		PRUint32 protoChainIndex = 0;
-		PRBool fail = PR_FALSE;
 		for (p = obj; p; p = JS_GetPrototype(cx, p))
-			if (!(mProperties[protoChainIndex++] = JS_Enumerate(cx, p)))
-				fail = PR_TRUE;
-		NS_ENSURE_TRUE(!fail, NS_ERROR_OUT_OF_MEMORY);
+			mProperties[protoChainIndex++] = JS_Enumerate(cx, p);
 
 		if (JS_ObjectIsFunction(cx, obj)) {
 			JSFunction *fun = JS_ValueToFunction(cx, mJSValue);
@@ -248,7 +246,8 @@ leakmonJSObjectInfo::GetNumProperties(PRUint32 *aResult)
 {
 	PRUint32 result = 0;
 	for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
-		result += mProperties[i]->length;
+		if (mProperties[i])
+			result += mProperties[i]->length;
 	*aResult = result;
 	return NS_OK;
 }
@@ -263,11 +262,13 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 		NS_ENSURE_TRUE(propertiesIndex < mNumPropertiesArrays,
 				       NS_ERROR_INVALID_ARG); // aIndex out of bounds
 		JSIdArray *a = mProperties[propertiesIndex];
-		if (aIndex < PRUint32(a->length)) {
-			id = a->vector[aIndex];
-			break;
+		if (a) {
+			if (aIndex < PRUint32(a->length)) {
+				id = a->vector[aIndex];
+				break;
+			}
+			aIndex -= a->length;
 		}
-		aIndex -= a->length;
 		++propertiesIndex;
 	}
 	NS_ASSERTION(!JSVAL_IS_PRIMITIVE(mJSValue),
