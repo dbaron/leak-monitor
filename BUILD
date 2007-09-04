@@ -66,3 +66,8 @@ to the same machine (and not all to the same filename!), and run
 		mac-x86-leakmonitor-<version>.xpi \
 (The order doesn't really matter, but I prefer putting a linux one first
 for saner newlines.)
+
+On Linux-x86:
+	build with gcc 3.3.6
+On Linux-x86_64:
+	build with gcc 4.1.2 (FC6)
