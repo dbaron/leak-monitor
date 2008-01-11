@@ -114,7 +114,7 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 
 			NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar),
 						 "char size mismatch");
-			aString.Assign(NS_REINTERPRET_CAST(PRUnichar*, chars), len);
+			aString.Assign(reinterpret_cast<PRUnichar*>(chars), len);
 		}
 	} else {
 		JSObject *obj = JSVAL_TO_OBJECT(aJSValue);
@@ -182,7 +182,7 @@ leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		char buf[30];
 		PR_snprintf(buf, sizeof(buf), " (%p",
-		            NS_STATIC_CAST(void*, JSVAL_TO_OBJECT(mJSValue)));
+		            static_cast<void*>(JSVAL_TO_OBJECT(mJSValue)));
 		aString.Append(NS_ConvertASCIItoUTF16(buf));
 		if (!mFileName.IsEmpty()) {
 			aString.Append(PRUnichar(','));
@@ -308,7 +308,7 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 
 	nsCOMPtr<leakmonIJSObjectInfo> iresult = result;
 
-	nsresult rv = result->Init(v, NS_REINTERPRET_CAST(const PRUnichar*,
+	nsresult rv = result->Init(v, reinterpret_cast<const PRUnichar*>(
 	                                                  propname));
 	NS_ENSURE_SUCCESS(rv, rv);
 

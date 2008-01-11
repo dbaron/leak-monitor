@@ -88,7 +88,7 @@ leakmonService::leakmonService()
 	mMainThread = PR_GetCurrentThread();
 
 	PRLibrary *lib;
-	mJS_TraceRuntime = NS_REINTERPRET_CAST(leakmonJS_TraceRuntimeFunc,
+	mJS_TraceRuntime = reinterpret_cast<leakmonJS_TraceRuntimeFunc>(
 		PR_FindFunctionSymbolAndLibrary("JS_TraceRuntime", &lib));
 	if (mJS_TraceRuntime)
 		PR_UnloadLibrary(lib);
@@ -242,8 +242,8 @@ struct RootsEntry : public PLDHashEntryHdr {
 leakmonService::ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
                             PRUint32 number, void *arg)
 {
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(hdr);
+	leakmonService *service = static_cast<leakmonService*>(arg);
 
 	if (!entry->notified && entry->roots.entryCount) {
 		entry->notified = PR_TRUE;
@@ -281,7 +281,7 @@ leakmonService::DidGC()
 	PRInt32 i = mReclaimWindows.Count();
 	while (i > 0) {
 		--i;
-		NotifyLeaks(NS_STATIC_CAST(JSObject*, mReclaimWindows.ElementAt(i)),
+		NotifyLeaks(static_cast<JSObject*>(mReclaimWindows.ElementAt(i)),
 		            leakmonIReport::RECLAIMED_LEAKS);
 	}
 	mReclaimWindows.Clear();
@@ -314,7 +314,7 @@ leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 		return;
 	}
 
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(
 		PL_DHashTableOperate(&mJSScopeInfo, global, PL_DHASH_ADD));
 	if (!entry) {
 		NS_WARNING("out of memory");
@@ -329,7 +329,7 @@ leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 	}
 	entry->generation = mGeneration;
 
-	RootsEntry *rootEntry = NS_STATIC_CAST(RootsEntry*,
+	RootsEntry *rootEntry = static_cast<RootsEntry*>(
 		PL_DHashTableOperate(&entry->roots, aRoot, PL_DHASH_ADD));
 	if (!rootEntry) {
 		NS_WARNING("out of memory");
@@ -355,22 +355,22 @@ struct TracerWithData : public leakmonJSTracer {
 /* static */ void JS_DLL_CALLBACK
 leakmonService::GCRootTracer(leakmonJSTracer *trc, void *thing, uint32 kind)
 {
-	FindGCRootData *data = NS_STATIC_CAST(TracerWithData*, trc)->data;
+	FindGCRootData *data = static_cast<TracerWithData*>(trc)->data;
 
 	if (kind == 0 /* JSTRACE_OBJECT */ ||
 	    kind == 4 /* JSTRACE_NAMESPACE */ ||
 	    kind == 5 /* JSTRACE_QNAME */ ||
 	    kind == 6 /* JSTRACE_XML */)
-		data->service->HandleRoot(NS_STATIC_CAST(JSObject*, thing),
+		data->service->HandleRoot(static_cast<JSObject*>(thing),
 		                          &data->haveLeaks);
 }
 
 /* static */ intN JS_DLL_CALLBACK
 leakmonService::GCRootMapper(void *rp, const char *name, void *aData)
 {
-	FindGCRootData *data = NS_STATIC_CAST(FindGCRootData*, aData);
+	FindGCRootData *data = static_cast<FindGCRootData*>(aData);
 
-	jsval *vp = NS_STATIC_CAST(jsval*, rp);
+	jsval *vp = static_cast<jsval*>(rp);
 	jsval v = *vp;
 	if (!JSVAL_IS_PRIMITIVE(v))
 		data->service->HandleRoot(JSVAL_TO_OBJECT(v), &data->haveLeaks);
@@ -382,7 +382,7 @@ leakmonService::GCRootMapper(void *rp, const char *name, void *aData)
 leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(hdr);
 	entry->prevRootCount = entry->roots.entryCount;
 	PL_DHashTableFinish(&entry->roots);
 	PL_DHashTableInit(&entry->roots, PL_DHashGetStubOps(), nsnull,
@@ -394,8 +394,8 @@ leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
 leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	leakmonService *service = NS_STATIC_CAST(leakmonService*, arg);
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(hdr);
+	leakmonService *service = static_cast<leakmonService*>(arg);
 	if (entry->generation != service->mGeneration) {
 		if (entry->notified) {
 			service->mReclaimWindows.AppendElement(entry->global);
@@ -413,8 +413,8 @@ leakmonService::RemoveDeadScopes(PLDHashTable *table, PLDHashEntryHdr *hdr,
 leakmonService::FindNeedForNewGC(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
 {
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*, hdr);
-	PRBool *needNewGC = NS_STATIC_CAST(PRBool*, arg);
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(hdr);
+	PRBool *needNewGC = static_cast<PRBool*>(arg);
 	if (!entry->notified) {
 		PRUint32 count = entry->roots.entryCount;
 		if (count != entry->prevRootCount) {
@@ -480,8 +480,8 @@ leakmonService::BuildContextInfo()
 leakmonService::AppendToArray(PLDHashTable *table, PLDHashEntryHdr *hdr,
                               PRUint32 number, void *arg)
 {
-	nsVoidArray *array = NS_STATIC_CAST(nsVoidArray*, arg);
-	RootsEntry *entry = NS_STATIC_CAST(RootsEntry*, hdr);
+	nsVoidArray *array = static_cast<nsVoidArray*>(arg);
+	RootsEntry *entry = static_cast<RootsEntry*>(hdr);
 
 	array->AppendElement(entry->key);
 
@@ -497,7 +497,7 @@ leakmonService::NotifyLeaks(JSObject *aGlobalObject, NotifyType aType)
 		do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	JSScopeInfoEntry *entry = NS_STATIC_CAST(JSScopeInfoEntry*,
+	JSScopeInfoEntry *entry = static_cast<JSScopeInfoEntry*>(
 		PL_DHashTableOperate(&mJSScopeInfo, aGlobalObject, PL_DHASH_LOOKUP));
 	nsVoidArray leaks;
 	if (PL_DHASH_ENTRY_IS_BUSY(entry)) {

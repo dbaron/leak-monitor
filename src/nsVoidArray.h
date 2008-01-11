@@ -182,7 +182,7 @@ public:
 
   NS_HIDDEN_(void) ResetToAutoBuffer()
   {
-    SetArray(NS_REINTERPRET_CAST(Impl*, mAutoBuf), kAutoBufSize, 0, PR_FALSE,
+    SetArray(reinterpret_cast<Impl*>(mAutoBuf), kAutoBufSize, 0, PR_FALSE,
              PR_TRUE);
   }
   

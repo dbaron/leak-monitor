@@ -65,7 +65,7 @@ leakmonReport::~leakmonReport()
 	if (cx) {
 		for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
 			 i < i_end; ++i) {
-			JS_UnlockGCThing(cx, NS_STATIC_CAST(JSObject*,
+			JS_UnlockGCThing(cx, static_cast<JSObject*>(
 												mLeakedWrappedJSObjects[i]));
 		}
 	}
@@ -98,7 +98,7 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	 */
 	for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
 	     i < i_end; ++i) {
-		JSObject *obj = NS_STATIC_CAST(JSObject*, mLeakedWrappedJSObjects[i]);
+		JSObject *obj = static_cast<JSObject*>(mLeakedWrappedJSObjects[i]);
 		JSBool ok = JS_LockGCThing(cx, obj);
 		if (!ok) {
 			NS_NOTREACHED("JS_LockGCThing failed");
@@ -143,10 +143,10 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	while (stack.Count()) {
 		PRInt32 i = stack.Count() - 1;
 		nsCOMPtr<leakmonIJSObjectInfo> iinfo =
-			dont_AddRef(NS_STATIC_CAST(leakmonIJSObjectInfo*, stack[i]));
+			dont_AddRef(static_cast<leakmonIJSObjectInfo*>(stack[i]));
 		stack.RemoveElementAt(i);
-		leakmonJSObjectInfo *info = NS_STATIC_CAST(leakmonJSObjectInfo*,
-			NS_STATIC_CAST(leakmonIJSObjectInfo*, iinfo));
+		leakmonJSObjectInfo *info = static_cast<leakmonJSObjectInfo*>(
+			static_cast<leakmonIJSObjectInfo*>(iinfo));
 
 		if (!info) {
 			/* sentinel value to pop depth */
@@ -162,7 +162,7 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 		if (nprops > 0) {
 			/* figure out if we've already printed this object */
 			ObjectInReportEntry *inReportEntry =
-				NS_STATIC_CAST(ObjectInReportEntry*,
+				static_cast<ObjectInReportEntry*>(
 					PL_DHashTableOperate(&objectsInReport,
 					                     (void*) info->GetJSValue(),
 					                     PL_DHASH_ADD));
@@ -257,7 +257,7 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 	}
 
 	leakmonIJSObjectInfo **array =
-		NS_STATIC_CAST(leakmonIJSObjectInfo**,
+		static_cast<leakmonIJSObjectInfo**>(
 			nsMemory::Alloc(count * sizeof(leakmonIJSObjectInfo*)));
 	NS_ENSURE_TRUE(array, NS_ERROR_OUT_OF_MEMORY);
 
@@ -274,7 +274,7 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 			// with the JS_MapGCRoots hack.  (Then from there one could
 			// just get the interface info, and from that the name.)
 			NS_NAMED_LITERAL_STRING(n, "[leaked object]");
-			rv = item->Init(OBJECT_TO_JSVAL(NS_STATIC_CAST(JSObject*,
+			rv = item->Init(OBJECT_TO_JSVAL(static_cast<JSObject*>(
 			                                    mLeakedWrappedJSObjects[i])),
 			                n.get());
 		} else {

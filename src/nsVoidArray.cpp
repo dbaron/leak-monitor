@@ -144,7 +144,7 @@ nsVoidArray::SetArray(Impl *newImpl, PRInt32 aSize, PRInt32 aCount,
   NS_PRECONDITION(newImpl, "can't set size");
   mImpl = newImpl;
   mImpl->mCount = aCount;
-  mImpl->mBits = NS_STATIC_CAST(PRUint32, aSize & kArraySizeMask) |
+  mImpl->mBits = static_cast<PRUint32>(aSize & kArraySizeMask) |
                  (aOwner ? kArrayOwnerMask : 0) |
                  (aHasAuto ? kArrayHasAutoBufferMask : 0);
 }
@@ -168,9 +168,9 @@ PRBool nsVoidArray::SizeTo(PRInt32 aSize)
     {
       if (isOwner)
       {
-        free(NS_REINTERPRET_CAST(char *, mImpl));
+        free(reinterpret_cast<char *>(mImpl));
         if (hasAuto) {
-          NS_STATIC_CAST(nsAutoVoidArray*, this)->ResetToAutoBuffer();
+          static_cast<nsAutoVoidArray*>(this)->ResetToAutoBuffer();
         }
         else {
           mImpl = nsnull;
@@ -194,7 +194,7 @@ PRBool nsVoidArray::SizeTo(PRInt32 aSize)
     }
 
     char* bytes = (char *) realloc(mImpl,SIZEOF_IMPL(aSize));
-    Impl* newImpl = NS_REINTERPRET_CAST(Impl*, bytes);
+    Impl* newImpl = reinterpret_cast<Impl*>(bytes);
     if (!newImpl)
       return PR_FALSE;
 
@@ -227,7 +227,7 @@ PRBool nsVoidArray::SizeTo(PRInt32 aSize)
   // just allocate an array
   // allocate the exact size requested
   char* bytes = (char *) malloc(SIZEOF_IMPL(aSize));
-  Impl* newImpl = NS_REINTERPRET_CAST(Impl*, bytes);
+  Impl* newImpl = reinterpret_cast<Impl*>(bytes);
   if (!newImpl)
     return PR_FALSE;
 
@@ -371,7 +371,7 @@ nsVoidArray::~nsVoidArray()
 {
   MOZ_COUNT_DTOR(nsVoidArray);
   if (mImpl && IsArrayOwner())
-    free(NS_REINTERPRET_CAST(char*, mImpl));
+    free(reinterpret_cast<char*>(mImpl));
 }
 
 PRInt32 nsVoidArray::IndexOf(void* aPossibleElement) const
@@ -626,10 +626,10 @@ void nsVoidArray::Compact()
     if (HasAutoBuffer() && count <= kAutoBufSize)
     {
       Impl* oldImpl = mImpl;
-      NS_STATIC_CAST(nsAutoVoidArray*, this)->ResetToAutoBuffer();
+      static_cast<nsAutoVoidArray*>(this)->ResetToAutoBuffer();
       memcpy(mImpl->mArray, oldImpl->mArray,
              count * sizeof(mImpl->mArray[0]));
-      free(NS_REINTERPRET_CAST(char *, oldImpl));
+      free(reinterpret_cast<char *>(oldImpl));
     }
     else if (GetArraySize() > count)
     {
