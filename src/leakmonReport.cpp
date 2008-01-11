@@ -63,6 +63,8 @@ leakmonReport::~leakmonReport()
 	NS_ASSERTION(cx, "yikes");
 
 	if (cx) {
+		JSAutoRequest ar(cx);
+
 		for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
 			 i < i_end; ++i) {
 			JS_UnlockGCThing(cx, static_cast<JSObject*>(
@@ -88,6 +90,8 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
+	JSAutoRequest ar(cx);
 
 	mLeakedWrappedJSObjects = aLeakedWrappedJSObjects;
 	

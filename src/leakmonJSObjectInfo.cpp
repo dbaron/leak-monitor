@@ -63,6 +63,8 @@ leakmonJSObjectInfo::~leakmonJSObjectInfo()
 	NS_ASSERTION(cx, "can't shutdown properly");
 
 	if (cx) {
+		JSAutoRequest ar(cx);
+
 		JSVAL_UNLOCK(cx, mJSValue);
 		if (mProperties) {
 			for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
@@ -130,6 +132,8 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 {
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
+	JSAutoRequest ar(cx);
 
 	mName.Assign(aName);
 	mJSValue = aJSValue;
@@ -276,6 +280,8 @@ leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
 
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
+
+	JSAutoRequest ar(cx);
 
 	jsval n;
 	JSBool ok = JS_IdToValue(cx, id, &n);

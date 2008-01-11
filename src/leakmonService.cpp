@@ -442,17 +442,20 @@ leakmonService::BuildContextInfo()
 	FindGCRootData data;
 	data.service = this;
 	data.haveLeaks = PR_FALSE;
-	if (mJS_TraceRuntime) {
-		TracerWithData trc;
-		trc.context = mJSContext;
-		trc.callback = GCRootTracer;
-		trc.debugPrinter = NULL;
-		trc.debugPrintArg = NULL;
-		trc.debugPrintIndex = (size_t)-1;
-		trc.data = &data;
-		(*mJS_TraceRuntime)(&trc);
-	} else {
-		JS_MapGCRoots(mJSRuntime, GCRootMapper, &data);
+	{
+		JSAutoRequest ar(mJSContext);
+		if (mJS_TraceRuntime) {
+			TracerWithData trc;
+			trc.context = mJSContext;
+			trc.callback = GCRootTracer;
+			trc.debugPrinter = NULL;
+			trc.debugPrintArg = NULL;
+			trc.debugPrintIndex = (size_t)-1;
+			trc.data = &data;
+			(*mJS_TraceRuntime)(&trc);
+		} else {
+			JS_MapGCRoots(mJSRuntime, GCRootMapper, &data);
+		}
 	}
 
 	PRBool haveLeaks = data.haveLeaks;

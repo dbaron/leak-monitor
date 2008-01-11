@@ -39,7 +39,7 @@ Build instructions for leak-monitor extension.
 
 For each platform:
 
-	In a source tree from the MOZILLA_1_8_0_BRANCH, extract the
+	In a source tree from the MOZILLA_1_8_BRANCH, extract the
 	source tarball inside of mozilla/extensions/
 
 	Build that tree (at least enough so that you've run the export
