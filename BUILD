@@ -39,8 +39,8 @@ Build instructions for leak-monitor extension.
 
 For each platform:
 
-	In a source tree from the MOZILLA_1_8_BRANCH, extract the
-	source tarball inside of mozilla/extensions/
+	In a source tree from the Firefox 3.0 beta 2 release, extract
+	the source tarball inside of mozilla/extensions/
 
 	Build that tree (at least enough so that you've run the export
 	phase for the tier that has layout).  Do this with an optimized,

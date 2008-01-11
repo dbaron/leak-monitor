@@ -52,7 +52,6 @@
 
 // Frozen APIs that require linking against NSPR.
 #include "plstr.h"
-#include "prlink.h"
 
 // XPCOM glue APIs
 #include "nsDebug.h"
@@ -86,12 +85,6 @@ leakmonService::leakmonService()
 	mJSScopeInfo.ops = nsnull;
 	// This assumes we're always created on the main thread.
 	mMainThread = PR_GetCurrentThread();
-
-	PRLibrary *lib;
-	mJS_TraceRuntime = reinterpret_cast<leakmonJS_TraceRuntimeFunc>(
-		PR_FindFunctionSymbolAndLibrary("JS_TraceRuntime", &lib));
-	if (mJS_TraceRuntime)
-		PR_UnloadLibrary(lib);
 }
 
 leakmonService::~leakmonService()
@@ -348,12 +341,12 @@ struct FindGCRootData {
 	PRBool haveLeaks;
 };
 
-struct TracerWithData : public leakmonJSTracer {
+struct TracerWithData : public JSTracer {
 	FindGCRootData *data;
 };
 
 /* static */ void JS_DLL_CALLBACK
-leakmonService::GCRootTracer(leakmonJSTracer *trc, void *thing, uint32 kind)
+leakmonService::GCRootTracer(JSTracer *trc, void *thing, uint32 kind)
 {
 	FindGCRootData *data = static_cast<TracerWithData*>(trc)->data;
 
@@ -444,18 +437,15 @@ leakmonService::BuildContextInfo()
 	data.haveLeaks = PR_FALSE;
 	{
 		JSAutoRequest ar(mJSContext);
-		if (mJS_TraceRuntime) {
-			TracerWithData trc;
-			trc.context = mJSContext;
-			trc.callback = GCRootTracer;
-			trc.debugPrinter = NULL;
-			trc.debugPrintArg = NULL;
-			trc.debugPrintIndex = (size_t)-1;
-			trc.data = &data;
-			(*mJS_TraceRuntime)(&trc);
-		} else {
-			JS_MapGCRoots(mJSRuntime, GCRootMapper, &data);
-		}
+
+		TracerWithData trc;
+		trc.context = mJSContext;
+		trc.callback = GCRootTracer;
+		trc.debugPrinter = NULL;
+		trc.debugPrintArg = NULL;
+		trc.debugPrintIndex = (size_t)-1;
+		trc.data = &data;
+		JS_TraceRuntime(&trc);
 	}
 
 	PRBool haveLeaks = data.haveLeaks;

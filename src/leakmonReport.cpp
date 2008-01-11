@@ -273,10 +273,7 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 		if (item) {
 			// XXX It would be nice to be able to print the interface of
 			// the nsXPCWrappedJS that leaked here, but that requires a
-			// frozen way to convert our root name to an
-			// nsIXPConnectWrappedJS or a frozen way to do what we do
-			// with the JS_MapGCRoots hack.  (Then from there one could
-			// just get the interface info, and from that the name.)
+			// frozen API we don't have.
 			NS_NAMED_LITERAL_STRING(n, "[leaked object]");
 			rv = item->Init(OBJECT_TO_JSVAL(static_cast<JSObject*>(
 			                                    mLeakedWrappedJSObjects[i])),

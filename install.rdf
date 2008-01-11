@@ -47,7 +47,7 @@
 		<em:targetApplication>
 			<Description>
 				<em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-				<em:minVersion>2.0</em:minVersion>
+				<em:minVersion>3.0b2</em:minVersion>
 				<em:maxVersion>3.0b3</em:maxVersion>
 			</Description>
 		</em:targetApplication>
@@ -56,27 +56,8 @@
 		<em:targetApplication>
 			<Description>
 				<em:id>{3550f703-e582-4d05-9a08-453d09bdfdc6}</em:id>
-				<em:minVersion>2.0</em:minVersion>
+				<em:minVersion>3.0a1</em:minVersion>
 				<em:maxVersion>3.0a1</em:maxVersion>
-			</Description>
-		</em:targetApplication>
-
-		<!-- Sunbird -->
-		<em:targetApplication>
-			<Description>
-				<em:id>{718e30fb-e89b-41dd-9da7-e25a45638b28}</em:id>
-				<em:minVersion>0.3</em:minVersion>
-				<em:maxVersion>0.7</em:maxVersion>
-			</Description>
-		</em:targetApplication>
-
-		<!-- Flock -->
-		<!-- not sure whether 0.8 is 1.8.0 or 1.8.1-based, so excluding -->
-		<em:targetApplication>
-			<Description>
-				<em:id>{a463f10c-3994-11da-9945-000d60ca027b}</em:id>
-				<em:minVersion>0.9</em:minVersion>
-				<em:maxVersion>1.0</em:maxVersion>
 			</Description>
 		</em:targetApplication>
 

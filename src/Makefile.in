@@ -70,7 +70,6 @@ CPPSRCS		= \
 		leakmonReport.cpp \
 		leakmonService.cpp \
 		leakmonJSObjectInfo.cpp \
-		nsVoidArray.cpp \
 		$(NULL)
 
 ifeq ($(OS_ARCH),Darwin)
