@@ -90,10 +90,6 @@ public:
 
 private:
 	static NS_HIDDEN_(leakmonService) *gService;
-	static NS_HIDDEN_(JSGCCallback) gNextGCCallback;
-
-	static NS_HIDDEN_(JSBool) JS_DLL_CALLBACK
-		GCCallback(JSContext *cx, JSGCStatus status);
 
 	PR_STATIC_CALLBACK(PLDHashOperator)
 		ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,

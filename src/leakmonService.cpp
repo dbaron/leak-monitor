@@ -65,7 +65,6 @@
 #include "nsIAppStartupNotifier.h"
 
 /* static */ leakmonService* leakmonService::gService = nsnull;
-/* static */ JSGCCallback leakmonService::gNextGCCallback = nsnull;
 
 static const char gQuitApplicationTopic[] = "quit-application";
 
@@ -108,34 +107,6 @@ NS_IMPL_ISUPPORTS3(leakmonService,
                    leakmonIService,
                    nsIObserver,
                    nsISupportsWeakReference)
-
-NS_IMETHODIMP
-leakmonService::GetBuildHasCycleCollector(PRBool *aResult)
-{
-	nsresult rv;
-	nsCOMPtr<nsIXULAppInfo> appInfo =
-		do_GetService("@mozilla.org/xre/app-info;1", &rv);
-	NS_ENSURE_SUCCESS(rv, rv);
-
-	nsCString versionStr, buildidStr;
-	appInfo->GetPlatformVersion(versionStr);
-	appInfo->GetPlatformBuildID(buildidStr);
-
-	// We support a minimum of the 1.8 branch.  If we're on the 1.8
-	// branch, the result should be false.  Otherwise, it should be true
-	// if the build ID is at least 2007010415 (when the cycle collector
-	// landed).  But, actually, we need the cycle-collector-begin
-	// notification which landed starting in builds 2007051014.  So act
-	// like the cycle collector wasn't present in builds between those
-	// dates, since the failure mode of being way too noisy is better
-	// than the failure mode of being way too quiet (for a tool like
-	// this, I think).
-	const char *version = versionStr.get(), *buildid = buildidStr.get();
-	*aResult = (version[0] != '1' || version[1] != '.' || version[2] != '8' ||
-			    ('0' <= version[3] && version[3] <= '9')) &&
-		       PL_strcmp(buildid, "2007051014") >= 0;
-	return NS_OK;
-}
 
 NS_IMETHODIMP
 leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
@@ -188,34 +159,10 @@ leakmonService::Init()
 	rv = os->AddObserver(this, gQuitApplicationTopic, PR_TRUE);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	PRBool buildHasCycleCollector;
-	rv = GetBuildHasCycleCollector(&buildHasCycleCollector);
+	rv = os->AddObserver(this, "cycle-collector-begin", PR_TRUE);
 	NS_ENSURE_SUCCESS(rv, rv);
 
-	if (buildHasCycleCollector) {
-		rv = os->AddObserver(this, "cycle-collector-begin", PR_TRUE);
-		NS_ENSURE_SUCCESS(rv, rv);
-	} else {
-		gNextGCCallback = JS_SetGCCallbackRT(mJSRuntime, GCCallback);
-	}
-
 	return NS_OK;
-}
-
-/* static */ JSBool JS_DLL_CALLBACK
-leakmonService::GCCallback(JSContext *cx, JSGCStatus status)
-{
-	JSBool result = gNextGCCallback ? gNextGCCallback(cx, status) : JS_TRUE;
-
-	if (gService && status == JSGC_END) {
-		if (PR_GetCurrentThread() == gService->mMainThread) {
-			gService->DidGC();
-		} else {
-			// XXX Perhaps we should proxy, except that requires unfrozen APIs.
-		}
-	}
-
-	return result;
 }
 
 // Only create entries if they don't have a Components object.
