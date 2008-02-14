@@ -72,10 +72,6 @@ CPPSRCS		= \
 		leakmonJSObjectInfo.cpp \
 		$(NULL)
 
-ifeq ($(OS_ARCH),Darwin)
-EXTRA_DSO_LDOPTS += -Wl,-executable_path -Wl,$(DIST)/bin
-endif
-
 # Should I need $(OS_LIBS) ?
 EXTRA_DSO_LDOPTS += \
 		$(XPCOM_GLUE_LDOPTS) \
