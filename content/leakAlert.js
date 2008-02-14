@@ -73,7 +73,8 @@ function LeakAlertOnLoad()
 	var lwjss = report.getLeakedWrappedJSs({});
 
 	for each (var lwjs in lwjss) {
-		gTreeView.childData.appendChild(new JSObjectRecord(lwjs));
+		gTreeView.childData.appendChild(new JSObjectRecord(
+			"[leaked object]", lwjs));
 	}
 }
 
@@ -89,8 +90,9 @@ function LeakAlertCopyReport()
 	clipboard.copyString(text);
 }
 
-function JSObjectRecord(lwjs)
+function JSObjectRecord(name, lwjs)
 {
+	this.name = name;
 	this.lwjs = lwjs;
 
 	this.setColumnPropertyName("name", "name");
@@ -99,7 +101,7 @@ function JSObjectRecord(lwjs)
 	this.setColumnPropertyName("lineend", "lineEnd");
 	this.setColumnPropertyName("string", "stringRep");
 	for each (var m in
-	          ["name", "fileName", "lineStart", "lineEnd", "stringRep"]) {
+	          ["fileName", "lineStart", "lineEnd", "stringRep"]) {
 		this[m] = lwjs[m];
 	}
 	if (!this.fileName) {
@@ -118,6 +120,7 @@ JSObjectRecord.prototype = new XULTreeViewRecord(gTreeView.share);
 JSObjectRecord.prototype.onPreOpen = function() {
 	this.childData = new Array();
 	for (var i = 0; i < this.lwjs.numProperties; ++i) {
-		this.appendChild(new JSObjectRecord(this.lwjs.getPropertyAt(i)));
+		this.appendChild(new JSObjectRecord(
+			this.lwjs.getPropertyNameAt(i), this.lwjs.getPropertyValueAt(i)));
 	}
 }

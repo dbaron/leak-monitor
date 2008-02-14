@@ -46,6 +46,7 @@
 #include "nsCOMPtr.h"
 #include "nsMemory.h"
 #include "pldhash.h"
+#include "nsTPtrArray.h"
 
 // Frozen APIs that require linking against JS
 #include "jsapi.h"
@@ -59,18 +60,6 @@ leakmonReport::leakmonReport()
 
 leakmonReport::~leakmonReport()
 {
-	JSContext *cx = leakmonService::GetJSContext();
-	NS_ASSERTION(cx, "yikes");
-
-	if (cx) {
-		JSAutoRequest ar(cx);
-
-		for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
-			 i < i_end; ++i) {
-			JS_UnlockGCThing(cx, static_cast<JSObject*>(
-												mLeakedWrappedJSObjects[i]));
-		}
-	}
 }
 
 NS_IMPL_ISUPPORTS1(leakmonReport, leakmonIReport)
@@ -93,26 +82,23 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 
 	JSAutoRequest ar(cx);
 
-	mLeakedWrappedJSObjects = aLeakedWrappedJSObjects;
-	
 	/*
 	 * This rooting isn't quite sufficient, and can't be, since we
 	 * gather these during garbage collection but root them after (when
 	 * GC could, in theory, be running on another thread
+	 *
+	 * But we may as well root for the duration of this function, since
+	 * we can.
 	 */
-	for (PRInt32 i = 0, i_end = mLeakedWrappedJSObjects.Count();
+	for (PRInt32 i = 0, i_end = aLeakedWrappedJSObjects.Count();
 	     i < i_end; ++i) {
-		JSObject *obj = static_cast<JSObject*>(mLeakedWrappedJSObjects[i]);
+		JSObject *obj = static_cast<JSObject*>(aLeakedWrappedJSObjects[i]);
 		JSBool ok = JS_LockGCThing(cx, obj);
 		if (!ok) {
 			NS_NOTREACHED("JS_LockGCThing failed");
-			mLeakedWrappedJSObjects.Clear();
 			return NS_ERROR_FAILURE;
 		}
 	}
-	NS_ENSURE_TRUE(mLeakedWrappedJSObjects.Count() ==
-	                   aLeakedWrappedJSObjects.Count(),
-	               NS_ERROR_OUT_OF_MEMORY);
 
 	/* build mReportText */
 	mReportText.Append(NS_ConvertASCIItoUTF16("Leaks in "));
@@ -124,33 +110,42 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	mReportText.Append(PRUnichar(':'));
 	mReportText.Append(PRUnichar('\n'));
 
-	PLDHashTable objectsInReport;
-	nsVoidArray stack; /* strong references to leakmonIJSObjectInfo, with
-	                      null entries as sentinels to pop stack */
+	leakmonObjectsInReportTable objectsInReport;
+
+	// weak references to leakmonIJSObjectInfo, with null entries as
+	// sentinels to pop stack
+	nsTArray<leakmonJSObjectInfo::PropertyStruct> stack;
+	NS_NAMED_LITERAL_STRING(lostring, "[leaked object]");
+
 	PRInt32 depth = 0;
-	const PRInt32 maxDepth = 3;
+	const PRInt32 maxPrintDepth = 3;
 
-	PRBool ok = PL_DHashTableInit(&objectsInReport, PL_DHashGetStubOps(),
-	                              nsnull, sizeof(ObjectInReportEntry), 16);
-	NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
+	PRInt32 count = aLeakedWrappedJSObjects.Count();
+	stack.AppendElements(count);
+	for (PRInt32 i = count - 1; i >= 0; --i) {
+		JSObject *obj = static_cast<JSObject*>(aLeakedWrappedJSObjects[i]);
+		jsval val = OBJECT_TO_JSVAL(obj);
 
-	leakmonIJSObjectInfo **array;
-	PRUint32 count;
-	rv = GetLeakedWrappedJSs(&count, &array);
-	NS_ENSURE_SUCCESS(rv, rv);
-	for (PRInt32 j = count - 1; j >= 0; --j) {
-		stack.AppendElement(array[j]);
+		leakmonJSObjectInfo *info = new leakmonJSObjectInfo(val);
+		NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+
+		mLeakedObjects.AppendObject(info);
+		stack[i].mName = lostring;
+		stack[i].mValue = info;
+
+		leakmonJSObjectInfo *dummy;
+		void *key = reinterpret_cast<void*>(val);
+		NS_ASSERTION(!objectsInReport.Get(key, &dummy), "got object twice");
+
+		objectsInReport.Put(key, info);
 	}
-	nsMemory::Free(array);
 
 	rv = NS_OK;
-	while (stack.Count()) {
-		PRInt32 i = stack.Count() - 1;
-		nsCOMPtr<leakmonIJSObjectInfo> iinfo =
-			dont_AddRef(static_cast<leakmonIJSObjectInfo*>(stack[i]));
+	while (stack.Length()) {
+		PRUint32 i = stack.Length() - 1;
+		nsString name = stack[i].mName;
+		leakmonJSObjectInfo* info = stack[i].mValue;
 		stack.RemoveElementAt(i);
-		leakmonJSObjectInfo *info = static_cast<leakmonJSObjectInfo*>(
-			static_cast<leakmonIJSObjectInfo*>(iinfo));
 
 		if (!info) {
 			/* sentinel value to pop depth */
@@ -161,40 +156,27 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 		char twistyChar = ' ';
 
 		/* handle children */
+		PRBool wasInitialized = info->IsInitialized();
+		if (!wasInitialized) {
+			rv = info->Init(objectsInReport);
+			NS_ENSURE_SUCCESS(rv, rv);
+		}
+
 		PRUint32 nprops;
 		info->GetNumProperties(&nprops);
 		if (nprops > 0) {
 			/* figure out if we've already printed this object */
-			ObjectInReportEntry *inReportEntry =
-				static_cast<ObjectInReportEntry*>(
-					PL_DHashTableOperate(&objectsInReport,
-					                     (void*) info->GetJSValue(),
-					                     PL_DHASH_ADD));
-			PRBool inReport;
-			if (!inReportEntry) {
-				rv = NS_ERROR_OUT_OF_MEMORY;
-				inReport = PR_TRUE;
-			} else if (inReportEntry->key) {
-				inReport = PR_TRUE;
-			} else {
-				inReport = PR_FALSE;
-				inReportEntry->key = (void*) info->GetJSValue();
-			}
+			// Should we check a maxDepth here too?
+			if (!wasInitialized) {
+				twistyChar = (depth < maxPrintDepth) ? '+' : '-';
 
-			if (depth < maxDepth && !inReport) {
-				twistyChar = '+';
-				stack.AppendElement(nsnull); /* sentinel value to pop depth */
+				// append sentinel value to pop depth
+				stack.AppendElement();
 
 				/* append kids to stack */
 				for (PRUint32 iprop = nprops - 1; iprop != PRUint32(-1);
 				     --iprop) {
-					leakmonIJSObjectInfo *child;
-					nsresult rv2 = info->GetPropertyAt(iprop, &child);
-					if (NS_SUCCEEDED(rv2)) {
-						stack.AppendElement(child); /* transfer reference */
-					} else {
-						rv = rv2;
-					}
+					stack.AppendElement(info->PropertyStructAt(iprop));
 				}
 			} else {
 				twistyChar = '-';
@@ -202,20 +184,27 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 		}
 
 		/* print representation of this object */
-		for (PRInt32 c = 0; c < depth; ++c)
+		if (depth <= maxPrintDepth) {
+			for (PRInt32 c = 0; c < depth; ++c)
+				mReportText.Append(PRUnichar(' '));
+			mReportText.Append(PRUnichar('['));
+			mReportText.Append(PRUnichar(twistyChar));
+			mReportText.Append(PRUnichar(']'));
 			mReportText.Append(PRUnichar(' '));
-		mReportText.Append(PRUnichar('['));
-		mReportText.Append(PRUnichar(twistyChar));
-		mReportText.Append(PRUnichar(']'));
-		mReportText.Append(PRUnichar(' '));
-		info->AppendSelfToString(mReportText);
-		mReportText.Append(PRUnichar('\n'));
+			mReportText.Append(name);
+			info->AppendSelfToString(mReportText);
+			mReportText.Append(PRUnichar('\n'));
+		}
 
-		if (twistyChar == '+')
+		if (nprops > 0 && !wasInitialized)
 			++depth;
 	}
 
-	PL_DHashTableFinish(&objectsInReport);
+	for (PRInt32 i = 0, i_end = aLeakedWrappedJSObjects.Count();
+		 i < i_end; ++i) {
+		JS_UnlockGCThing(cx, static_cast<JSObject*>(
+											aLeakedWrappedJSObjects[i]));
+	}
 
 	return rv;
 }
@@ -253,7 +242,7 @@ NS_IMETHODIMP
 leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
                                    leakmonIJSObjectInfo ***aItems)
 {
-	PRInt32 count = mLeakedWrappedJSObjects.Count();
+	PRInt32 count = mLeakedObjects.Count();
 	if (count == 0) {
 		*aItemCount = 0;
 		*aItems = nsnull;
@@ -265,27 +254,8 @@ leakmonReport::GetLeakedWrappedJSs(PRUint32 *aItemCount,
 			nsMemory::Alloc(count * sizeof(leakmonIJSObjectInfo*)));
 	NS_ENSURE_TRUE(array, NS_ERROR_OUT_OF_MEMORY);
 
-	memset(array, 0, count * sizeof(leakmonIJSObjectInfo*));
-
 	for (PRInt32 i = 0; i < count; ++i) {
-		leakmonJSObjectInfo *item = new leakmonJSObjectInfo;
-		nsresult rv;
-		if (item) {
-			// XXX It would be nice to be able to print the interface of
-			// the nsXPCWrappedJS that leaked here, but that requires a
-			// frozen API we don't have.
-			NS_NAMED_LITERAL_STRING(n, "[leaked object]");
-			rv = item->Init(OBJECT_TO_JSVAL(static_cast<JSObject*>(
-			                                    mLeakedWrappedJSObjects[i])),
-			                n.get());
-		} else {
-			rv = NS_ERROR_OUT_OF_MEMORY;
-		}
-		if (NS_FAILED(rv)) {
-			NS_FREE_XPCOM_ISUPPORTS_POINTER_ARRAY(count, array);
-			return rv;
-		}
-		NS_ADDREF(array[i] = item);
+		NS_ADDREF(array[i] = mLeakedObjects[i]);
 	}
 
 	*aItemCount = count;

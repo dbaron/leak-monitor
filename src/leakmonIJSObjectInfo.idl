@@ -37,11 +37,9 @@
 
 #include "nsISupports.idl"
 
-[scriptable, uuid(cc549b31-6136-4cfb-b825-c56889d0fb34)]
+[scriptable, uuid(933f2c39-b993-47c0-bd7a-08cd70dedce4)]
 interface leakmonIJSObjectInfo : nsISupports
 {
-	readonly attribute wstring name;
-
 	readonly attribute wstring fileName;
 	readonly attribute unsigned long lineStart;
 	readonly attribute unsigned long lineEnd;
@@ -49,5 +47,6 @@ interface leakmonIJSObjectInfo : nsISupports
 	readonly attribute wstring stringRep;
 
 	readonly attribute unsigned long numProperties;
-	leakmonIJSObjectInfo getPropertyAt(in unsigned long index);
+	wstring              getPropertyNameAt (in unsigned long index);
+	leakmonIJSObjectInfo getPropertyValueAt(in unsigned long index);
 };

@@ -48,31 +48,16 @@
 // Frozen APIs that require linking against NSPR
 #include "prprf.h"
 
-leakmonJSObjectInfo::leakmonJSObjectInfo()
-	: mProperties(nsnull)
-	, mNumPropertiesArrays(0)
+leakmonJSObjectInfo::leakmonJSObjectInfo(jsval aJSValue)
+	: mJSValue(aJSValue)
+	, mIsInitialized(PR_FALSE)
 	, mLineStart(0)
 	, mLineEnd(0)
 {
-	mJSValue = JSVAL_NULL;
 }
 
 leakmonJSObjectInfo::~leakmonJSObjectInfo()
 {
-	JSContext *cx = leakmonService::GetJSContext();
-	NS_ASSERTION(cx, "can't shutdown properly");
-
-	if (cx) {
-		JSAutoRequest ar(cx);
-
-		JSVAL_UNLOCK(cx, mJSValue);
-		if (mProperties) {
-			for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
-				if (mProperties[i])
-					JS_DestroyIdArray(cx, mProperties[i]);
-			delete [] mProperties;
-		}
-	}
 }
 
 NS_IMPL_ISUPPORTS1(leakmonJSObjectInfo, leakmonIJSObjectInfo)
@@ -128,36 +113,65 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 }
 
 nsresult
-leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
+leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 {
+	mIsInitialized = PR_TRUE;
+
 	JSContext *cx = leakmonService::GetJSContext();
 	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
 
 	JSAutoRequest ar(cx);
 
-	mName.Assign(aName);
-	mJSValue = aJSValue;
-
-	JSBool ok = JSVAL_LOCK(cx, mJSValue);
-	if (!ok) {
-		NS_NOTREACHED("JSVAL_LOCK failed");
-		mJSValue = JSVAL_NULL;
-		return NS_ERROR_FAILURE;
-	}
-
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
 		JSObject *p;
 
-		PRUint32 protoChainLength = 0;
-		for (p = obj; p; p = JS_GetPrototype(cx, p))
-			++protoChainLength;
-		mProperties = new JSIdArray*[protoChainLength];
-		mNumPropertiesArrays = protoChainLength;
+		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
+			JSIdArray* properties = JS_Enumerate(cx, p);
+			if (!properties)
+				continue;
 
-		PRUint32 protoChainIndex = 0;
-		for (p = obj; p; p = JS_GetPrototype(cx, p))
-			mProperties[protoChainIndex++] = JS_Enumerate(cx, p);
+			for (jsint i = 0; i < properties->length; ++i) {
+				jsid id = properties->vector[i];
+
+				jsval n;
+				JSBool ok = JS_IdToValue(cx, id, &n);
+				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+				// n should be an integer, a string, or an XML QName,
+				// AttributeName, or AnyName
+
+				// XXX This can execute JS code!  How bad is that?
+				// shaver didn't seem too scared when I described it to him.
+				// XXX Could I avoid JS_ValueToString and still handle
+				// XML objects correctly?
+				JSString *nstr = JS_ValueToString(cx, n);
+				NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
+
+				const jschar *propname = JS_GetStringChars(nstr);
+				NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
+
+				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
+				// shaver didn't seem too scared when I described it to him.
+				// XXX Should I use JS_LookupUCProperty or
+				// JS_GetUCProperty?  What are the differences?
+				jsval v;
+				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
+										 propname, JS_GetStringLength(nstr), &v);
+				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+				leakmonJSObjectInfo *info = new leakmonJSObjectInfo(v);
+				NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+
+				PropertyStruct *ps = mProperties.AppendElement();
+				ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
+				ps->mValue = info;
+
+				aObjectsInReport.Put(reinterpret_cast<void*>(mJSValue), info);
+			}
+
+			JS_DestroyIdArray(cx, properties);
+		}
 
 		if (JS_ObjectIsFunction(cx, obj)) {
 			JSFunction *fun = JS_ValueToFunction(cx, mJSValue);
@@ -182,7 +196,6 @@ leakmonJSObjectInfo::Init(jsval aJSValue, const PRUnichar *aName)
 NS_HIDDEN_(void)
 leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
 {
-	aString.Append(mName);
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		char buf[30];
 		PR_snprintf(buf, sizeof(buf), " (%p",
@@ -202,15 +215,6 @@ leakmonJSObjectInfo::AppendSelfToString(nsString& aString)
 	aString.Append(PRUnichar('='));
 	aString.Append(PRUnichar(' '));
 	aString.Append(mString);
-}
-
-NS_IMETHODIMP
-leakmonJSObjectInfo::GetName(PRUnichar **aResult)
-{
-	PRUnichar *buf = NS_StringCloneData(mName);
-	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
-	*aResult = buf;
-	return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -248,78 +252,25 @@ leakmonJSObjectInfo::GetStringRep(PRUnichar **aResult)
 NS_IMETHODIMP
 leakmonJSObjectInfo::GetNumProperties(PRUint32 *aResult)
 {
-	PRUint32 result = 0;
-	for (PRUint32 i = 0; i < mNumPropertiesArrays; ++i)
-		if (mProperties[i])
-			result += mProperties[i]->length;
-	*aResult = result;
+	*aResult = mProperties.Length();
 	return NS_OK;
 }
 
 NS_IMETHODIMP
-leakmonJSObjectInfo::GetPropertyAt(PRUint32 aIndex,
-                                   leakmonIJSObjectInfo **aResult)
+leakmonJSObjectInfo::GetPropertyNameAt(PRUint32 aIndex,
+		                               PRUnichar **aResult)
 {
-	jsid id;
-	PRUint32 propertiesIndex = 0;
-	while (PR_TRUE) {
-		NS_ENSURE_TRUE(propertiesIndex < mNumPropertiesArrays,
-				       NS_ERROR_INVALID_ARG); // aIndex out of bounds
-		JSIdArray *a = mProperties[propertiesIndex];
-		if (a) {
-			if (aIndex < PRUint32(a->length)) {
-				id = a->vector[aIndex];
-				break;
-			}
-			aIndex -= a->length;
-		}
-		++propertiesIndex;
-	}
-	NS_ASSERTION(!JSVAL_IS_PRIMITIVE(mJSValue),
-	             "shouldn't have set mProperties");
+	PRUnichar *buf = NS_StringCloneData(mProperties[aIndex].mName);
+	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
+	*aResult = buf;
+	return NS_OK;
+}
 
-	JSContext *cx = leakmonService::GetJSContext();
-	NS_ENSURE_TRUE(cx, NS_ERROR_UNEXPECTED);
-
-	JSAutoRequest ar(cx);
-
-	jsval n;
-	JSBool ok = JS_IdToValue(cx, id, &n);
-	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
-
-	// n should be an integer, a string, or an XML QName, AttributeName,
-	// or AnyName
-
-	// XXX This can execute JS code!  How bad is that?
-	// shaver didn't seem too scared when I described it to him.
-	// XXX Could I avoid JS_ValueToString and still handle XML objects
-	// correctly?
-	JSString *nstr = JS_ValueToString(cx, n);
-	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
-
-	const jschar *propname = JS_GetStringChars(nstr);
-	NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
-
-	// XXX JS_GetUCProperty can execute JS code!  How bad is that?
-	// shaver didn't seem too scared when I described it to him.
-	// XXX Should I use JS_LookupUCProperty or JS_GetUCProperty?  What
-	// are the differences?
-	jsval v;
-	ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
-	                         propname, JS_GetStringLength(nstr), &v);
-	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
-
-	leakmonJSObjectInfo *result = new leakmonJSObjectInfo;
-	NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
-
-	nsCOMPtr<leakmonIJSObjectInfo> iresult = result;
-
-	nsresult rv = result->Init(v, reinterpret_cast<const PRUnichar*>(
-	                                                  propname));
-	NS_ENSURE_SUCCESS(rv, rv);
-
-	*aResult = nsnull;
-	iresult.swap(*aResult);
+NS_IMETHODIMP
+leakmonJSObjectInfo::GetPropertyValueAt(PRUint32 aIndex,
+                                        leakmonIJSObjectInfo **aResult)
+{
+	NS_ADDREF(*aResult = mProperties[aIndex].mValue);
 	return NS_OK;
 }
 

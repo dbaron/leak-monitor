@@ -42,10 +42,12 @@
 
 // Code within this extension
 #include "leakmonIReport.h"
+#include "leakmonJSObjectInfo.h"
 
 // XPCOM glue APIs
 #include "nsVoidArray.h"
 #include "nsStringAPI.h"
+#include "nsCOMArray.h"
 
 class leakmonReport : public leakmonIReport {
 public:
@@ -62,7 +64,7 @@ public:
 private:
 	void *mIdent;
 	PRUint32 mReason;
-	nsVoidArray mLeakedWrappedJSObjects;
+	nsCOMArray<leakmonIJSObjectInfo> mLeakedObjects;
 	nsString mReportText;
 };
 

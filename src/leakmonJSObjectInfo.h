@@ -45,30 +45,47 @@
 
 // XPCOM glue APIs
 #include "nsStringAPI.h"
+#include "nsTArray.h"
+#include "nsAutoPtr.h"
+#include "nsDataHashtable.h"
 
 // Frozen APIs
 #include "jsapi.h"
 
+class leakmonJSObjectInfo;
+typedef nsDataHashtable<nsVoidPtrHashKey, leakmonJSObjectInfo*>
+	leakmonObjectsInReportTable;
+
 class leakmonJSObjectInfo : public leakmonIJSObjectInfo {
 public:
-	leakmonJSObjectInfo() NS_HIDDEN;
+	leakmonJSObjectInfo(jsval aJSValue) NS_HIDDEN;
 	~leakmonJSObjectInfo() NS_HIDDEN;
 
+	struct PropertyStruct {
+		nsString mName;
+		nsRefPtr<leakmonJSObjectInfo> mValue;
+	};
+
 	// For leakmonReport
-	NS_HIDDEN_(nsresult) Init(jsval aJSValue, const PRUnichar *aName);
+	NS_HIDDEN_(nsresult) Init(leakmonObjectsInReportTable& aObjectsInReport);
 	NS_HIDDEN_(jsval) GetJSValue() { return mJSValue; }
 	NS_HIDDEN_(void) AppendSelfToString(nsString& aString);
+	NS_HIDDEN_(PRBool) IsInitialized() const { return mIsInitialized; }
+	NS_HIDDEN_(PropertyStruct&) PropertyStructAt(PRUint32 i) {
+		return mProperties[i];
+	}
 
 	NS_DECL_ISUPPORTS
 	NS_DECL_LEAKMONIJSOBJECTINFO
 
 private:
+	// We do NOT lock this, so if it is a GC thing, it cannot be
+	// accessed.  However, we can still use it to determine the type.
 	jsval mJSValue;
+	PRBool mIsInitialized;
 
-	JSIdArray** mProperties;
-	PRUint32 mNumPropertiesArrays;
+	nsTArray<PropertyStruct> mProperties;
 
-	nsString mName;
 	nsString mFileName;
 	PRUint32 mLineStart;
 	PRUint32 mLineEnd;
