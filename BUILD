@@ -70,7 +70,11 @@ to the same machine (and not all to the same filename!), and run
 (The order doesn't really matter, but I prefer putting a linux one first
 for saner newlines.)
 
-On Linux-x86:
-	build with gcc 3.3.6
-On Linux-x86_64:
-	build with gcc 4.1.2 (FC6)
+In some cases, you need to use the correct compiler to get binary
+compatibility with Mozilla's releases.  I just used Mozilla's try
+server (http://wiki.mozilla.org/Build:TryServer) to do that for me.
+The make-patch.sh script, included, generates a patch for the try server
+when run from the leak-monitor directory.  On Linux x86_64, I just do
+the build on Fedora 8.  (Note that doing this doesn't give you XPIs; you
+need to zip them manually from the extensions/ subdirectory of the
+archive.)
