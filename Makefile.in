@@ -61,10 +61,19 @@ DIST_FILES	= \
 		install.rdf \
 		$(NULL)
 
+ifneq ($(UNIVERSAL_BINARY),)
+# This isn't ideal, but there's no provision for noting something as a
+# Universal binary, and we have to produce the exact same file both
+# times if we're doing a universal build.
+TARGET_PLATFORM	= $(OS_TARGET)
+else
+TARGET_PLATFORM	= $(OS_TARGET)_$(TARGET_XPCOM_ABI)
+endif
+
 XULAPP_DEFINES	= \
 		-DEXTENSION_VERSION=$(EXTENSION_VERSION) \
 		-DFIREFOX_VERSION=$(FIREFOX_VERSION) \
-		-DTARGET_PLATFORM=$(OS_TARGET)_$(TARGET_XPCOM_ABI) \
+		-DTARGET_PLATFORM=$(TARGET_PLATFORM) \
 		-DINSTALL_EXTENSION_ID=$(INSTALL_EXTENSION_ID) \
 		$(NULL)
 
