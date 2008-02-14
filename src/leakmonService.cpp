@@ -288,6 +288,12 @@ struct FindGCRootData {
 	PRBool haveLeaks;
 };
 
+#ifndef DEBUG
+typedef void
+(* JS_DLL_CALLBACK JSTraceNamePrinter)(JSTracer *trc, char *buf,
+                                       size_t bufsize);
+#endif
+
 struct TracerWithData : public JSTracer {
 #ifndef DEBUG
 	/*
