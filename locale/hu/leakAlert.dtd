@@ -40,6 +40,7 @@
 <!ENTITY leakAlert.reclaimed.title "Visszatérő adatszivárgás figyelmeztetés">
 <!ENTITY leakAlert.reclaimed.explanation "Ebben az ablakban lévő JavaScript objektumok továbbra is adatszivárogást okoz. A memória egyes részei felszabadítva. A következő JavaScript objektumok továbbra is adatszivárgát okoznak:">
 <!ENTITY leakAlert.copyReport "Jelentés másolása a vágólapra">
+
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Név">
 <!ENTITY leakAlert.lwjstree.columnLabel.filename "Fájlnév">
 <!ENTITY leakAlert.lwjstree.columnLabel.linestart "Kezdet">
