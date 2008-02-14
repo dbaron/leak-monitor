@@ -39,6 +39,9 @@ Build instructions for leak-monitor extension.
 
 For each platform:
 
+	Make the source tarball from an svn checkout using
+	tar -cj --exclude=".svn" -vf leak-monitor-VERSION.tar.bz2 leak-monitor
+
 	In a source tree from the Firefox 3.0 beta 2 release, extract
 	the source tarball inside of mozilla/extensions/
 
