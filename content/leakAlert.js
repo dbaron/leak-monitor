@@ -92,7 +92,6 @@ function LeakAlertCopyReport()
 
 function JSObjectRecord(name, lwjs)
 {
-	this.name = name;
 	this.lwjs = lwjs;
 
 	this.setColumnPropertyName("name", "name");
@@ -100,6 +99,9 @@ function JSObjectRecord(name, lwjs)
 	this.setColumnPropertyName("linestart", "lineStart");
 	this.setColumnPropertyName("lineend", "lineEnd");
 	this.setColumnPropertyName("string", "stringRep");
+
+	/* we have to set these *after* calling setColumnPropertyName */
+	this.name = name;
 	for each (var m in
 	          ["fileName", "lineStart", "lineEnd", "stringRep"]) {
 		this[m] = lwjs[m];
