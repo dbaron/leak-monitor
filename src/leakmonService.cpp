@@ -386,11 +386,7 @@ leakmonService::BuildContextInfo()
 		JSAutoRequest ar(mJSContext);
 
 		TracerWithData trc;
-		trc.context = mJSContext;
-		trc.callback = GCRootTracer;
-		trc.debugPrinter = NULL;
-		trc.debugPrintArg = NULL;
-		trc.debugPrintIndex = (size_t)-1;
+		JS_TRACER_INIT(&trc, mJSContext, GCRootTracer);
 		trc.data = &data;
 		JS_TraceRuntime(&trc);
 	}
