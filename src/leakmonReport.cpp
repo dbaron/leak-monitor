@@ -64,10 +64,6 @@ leakmonReport::~leakmonReport()
 
 NS_IMPL_ISUPPORTS1(leakmonReport, leakmonIReport)
 
-struct ObjectInReportEntry : public PLDHashEntryHdr {
-	void *key; /* lines up with PLDHashEntryStub */
-};
-
 nsresult
 leakmonReport::Init(void *aIdent, PRUint32 aReason,
 		            const nsVoidArray &aLeakedWrappedJSObjects)
@@ -111,6 +107,7 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	mReportText.Append(PRUnichar('\n'));
 
 	leakmonObjectsInReportTable objectsInReport;
+	objectsInReport.Init();
 
 	// weak references to leakmonIJSObjectInfo, with null entries as
 	// sentinels to pop stack
