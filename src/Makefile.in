@@ -47,6 +47,10 @@ MODULE		= leakmonitor
 LIBRARY_NAME	= leakmon
 XPI_NAME	= $(MODULE)
 IS_COMPONENT	= 1
+# We want a shared library even in a static build:
+FORCE_SHARED_LIB = 1
+# bug 376041 doesn't have much info, but mfinkle says this is recommended
+USE_STATIC_LIBS	= 1
 
 REQUIRES	= \
 		  xpcom \
