@@ -1,7 +1,26 @@
 #!/bin/bash
 
 TMPDIR="$(mktemp -d)" || exit 1
-(cd "$TMPDIR" && cvs -d':pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot' co mozilla/browser/confvars.sh > /dev/null 2>&1 && cd mozilla && perl -pi -e 's/MOZ_EXTENSIONS_DEFAULT=" /MOZ_EXTENSIONS_DEFAULT=" leak-monitor /' browser/confvars.sh && cvs -d':pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot' diff)
+pushd "$TMPDIR" > /dev/null 2>&1 || exit 1
+cvs -d':pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot' co mozilla/browser/confvars.sh mozilla/browser/installer/windows/packages-static mozilla/browser/installer/unix/packages-static > /dev/null 2>&1 || exit 1
+cd mozilla || exit 1
+perl -pi -e 's/MOZ_EXTENSIONS_DEFAULT=" /MOZ_EXTENSIONS_DEFAULT=" leak-monitor /' browser/confvars.sh || exit 1
+cat >> browser/installer/windows/packages-static <<EOM
+bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\components\\leakmon.dll
+bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\components\\leakmonitor.xpt
+bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\chrome\\leakmon.jar
+bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\chrome.manifest
+bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\install.rdf
+EOM
+cat >> browser/installer/unix/packages-static <<EOM
+bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/chrome.manifest
+bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/components/leakmonitor.xpt
+bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/components/libleakmon.so
+bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/install.rdf
+bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/chrome/leakmon.jar
+EOM
+cvs -d':pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot' diff
+popd
 rm -rf "$TMPDIR"
 
 DATE="$(LC_TIME=C TZ=UTC date +'%-d %b %Y %H:%M:%S') -0000"
