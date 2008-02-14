@@ -289,6 +289,15 @@ struct FindGCRootData {
 };
 
 struct TracerWithData : public JSTracer {
+#ifndef DEBUG
+	/*
+	 * Include the DEBUG-only tail of JSTracer in non-DEBUG builds so we
+	 * can be binary-compatible with both.
+	 */
+	JSTraceNamePrinter  debugPrinter;
+	const void          *debugPrintArg;
+	size_t              debugPrintIndex;
+#endif
 	FindGCRootData *data;
 };
 
@@ -386,7 +395,16 @@ leakmonService::BuildContextInfo()
 		JSAutoRequest ar(mJSContext);
 
 		TracerWithData trc;
-		JS_TRACER_INIT(&trc, mJSContext, GCRootTracer);
+		/*
+		 * We want to be binary-compatible with DEBUG and non-DEBUG builds,
+		 * so manually expand JS_TRACER_INIT here.
+		 */
+		trc.context = mJSContext;
+		trc.callback = GCRootTracer;
+		trc.debugPrinter = NULL;
+		trc.debugPrintArg = NULL;
+		trc.debugPrintIndex = (size_t)-1;
+
 		trc.data = &data;
 		JS_TraceRuntime(&trc);
 	}
