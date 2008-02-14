@@ -17,6 +17,16 @@ diff -N extensions/leak-monitor/$FNAME
 +++ extensions/leak-monitor/$FNAME	$DATE
 EOM
         LEN=$(wc -l "$FNAME" | cut -d' ' -f1)
-        echo "@@ -0,0 +$LEN @@"
+        if [ "$LEN" == "0" ]
+        then
+            # really shouldn't even output previous 2 lines, but this
+            # case irrelevant in practice
+            echo -n
+        elif [ "$LEN" == "1" ]
+        then
+            echo "@@ -0,0 +1 @@"
+        else 
+            echo "@@ -0,0 +1,$LEN @@"
+        fi
         cat $FNAME | sed 's/^/\+/'
 done
