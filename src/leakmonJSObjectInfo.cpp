@@ -112,6 +112,17 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 	}
 }
 
+class leakmonJSPropertyDescArrayHolder {
+public:
+	leakmonJSPropertyDescArrayHolder(JSContext *aCX, JSPropertyDescArray *aPDA)
+		: mCX(aCX), mPDA(aPDA) {}
+	~leakmonJSPropertyDescArrayHolder()
+		{ JS_PutPropertyDescArray(mCX, mPDA); }
+private:
+	JSContext *mCX;
+	JSPropertyDescArray *mPDA;
+};
+
 nsresult
 leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 {
@@ -127,15 +138,20 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
-			JSIdArray* properties = JS_Enumerate(cx, p);
-			if (!properties)
+			JSPropertyDescArray pda;
+			JSBool ok = JS_GetPropertyDescArray(cx, p, &pda);
+			if (!ok) {
+				NS_NOTREACHED("JS_GetPropertyDescArray failed");
 				continue;
+			}
+			leakmonJSPropertyDescArrayHolder holder(cx, &pda);
 
-			for (jsint i = 0; i < properties->length; ++i) {
-				jsid id = properties->vector[i];
+			for (uint32 i = 0; i < pda.length; ++i) {
+				JSPropertyDesc *desc = pda.array + i;
+				jsid id = desc->id;
 
 				jsval n;
-				JSBool ok = JS_IdToValue(cx, id, &n);
+				ok = JS_IdToValue(cx, id, &n);
 				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
 				// n should be an integer, a string, or an XML QName,
@@ -151,16 +167,8 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				const jschar *propname = JS_GetStringChars(nstr);
 				NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
 
-				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
-				// shaver didn't seem too scared when I described it to him.
-				// XXX Should I use JS_LookupUCProperty or
-				// JS_GetUCProperty?  What are the differences?
-				jsval v;
-				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
-										 propname, JS_GetStringLength(nstr), &v);
-				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
-
-				leakmonJSObjectInfo *info = new leakmonJSObjectInfo(v);
+				leakmonJSObjectInfo *info =
+					new leakmonJSObjectInfo(desc->value);
 				NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
 
 				PropertyStruct *ps = mProperties.AppendElement();
@@ -169,8 +177,6 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 
 				aObjectsInReport.Put(reinterpret_cast<void*>(mJSValue), info);
 			}
-
-			JS_DestroyIdArray(cx, properties);
 		}
 
 		if (JS_ObjectIsFunction(cx, obj)) {
