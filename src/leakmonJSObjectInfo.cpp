@@ -48,6 +48,9 @@
 // Frozen APIs that require linking against NSPR
 #include "prprf.h"
 
+// Private JS APIs (for JSScopeProperty)
+#include "jsscope.h"
+
 leakmonJSObjectInfo::leakmonJSObjectInfo(jsval aJSValue)
 	: mJSValue(aJSValue)
 	, mIsInitialized(PR_FALSE)
@@ -127,12 +130,16 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
-			JSIdArray* properties = JS_Enumerate(cx, p);
-			if (!properties)
-				continue;
+			// Use JS_PropertyIterator instead of JS_Enumerate since
+			// some enumerate hooks (e.g., on wrapped natives) execute
+			// code.
+			JSScopeProperty *sprop = nsnull;
+			while (JS_PropertyIterator(p, &sprop)) {
+				if (!(sprop->attrs & JSPROP_ENUMERATE) ||
+				    (sprop->flags & SPROP_IS_ALIAS))
+					continue;
 
-			for (jsint i = 0; i < properties->length; ++i) {
-				jsid id = properties->vector[i];
+				jsid id = sprop->id;
 
 				jsval n;
 				JSBool ok = JS_IdToValue(cx, id, &n);
@@ -175,8 +182,6 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
 				ps->mValue = info;
 			}
-
-			JS_DestroyIdArray(cx, properties);
 		}
 
 		if (JS_ObjectIsFunction(cx, obj)) {
