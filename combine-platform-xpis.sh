@@ -90,6 +90,11 @@ do
 	else
 		mv $TMPDIR/in $TMPDIR/out
 	fi
+
+	# Fix the targetPlatform we generated for Universal binaries to
+	# represent only what is really supported.
+	cat $TMPDIR/out/install.rdf | sed '/<em:targetPlatform>Darwin</{ h; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_x86-gcc3</; G; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_ppc-gcc3</}' > TMPDIR/install.rdf
+	mv $TMPDIR/install.rdf $TMPDIR/out/install.rdf
 done
 
 (cd $TMPDIR/out && zip ../out.zip $(find . -type f))
