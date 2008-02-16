@@ -153,8 +153,11 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 
 				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
 				// shaver didn't seem too scared when I described it to him.
-				// XXX Should I use JS_LookupUCProperty or
-				// JS_GetUCProperty?  What are the differences?
+				// Since js_GetProperty starts with a call to
+				// js_LookupProperty, it's clear that
+				// JS_LookupUCProperty does less than JS_GetUCProperty,
+				// so prefer Lookup over Get (although it's not clear to
+				// me exactly what the differences are).
 				jsval v;
 				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
 										 propname, JS_GetStringLength(nstr), &v);
