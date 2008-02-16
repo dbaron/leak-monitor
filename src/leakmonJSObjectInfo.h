@@ -88,7 +88,7 @@ private:
 
 	PRUint32 PropertiesIndex(PRUint32 i) {
 		// We store mProperties in backwards order.
-		return i + 1 - mProperties.Length();
+		return mProperties.Length() - (i + 1);
 	}
 
 	nsString mFileName;
