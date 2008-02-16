@@ -62,9 +62,11 @@ DIST_FILES	= \
 		$(NULL)
 
 ifneq ($(UNIVERSAL_BINARY),)
-# This isn't ideal, but there's no provision for noting something as a
-# Universal binary, and we have to produce the exact same file both
-# times if we're doing a universal build.
+# When we're building a universal binary, and we have to produce the
+# exact same file both times if we're doing a universal build.  We then
+# fix up the install.rdf in combine-platform-xpis.sh to have only the
+# correct targetPlatforms listed (but after putting the universal binary
+# in the Darwin directory that lets it be shared by both).
 TARGET_PLATFORM	= $(OS_TARGET)
 else
 TARGET_PLATFORM	= $(OS_TARGET)_$(TARGET_XPCOM_ABI)
