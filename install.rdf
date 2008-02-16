@@ -42,7 +42,7 @@
 	<Description about="urn:mozilla:install-manifest">
 #expand 		<em:id>__INSTALL_EXTENSION_ID__</em:id>
 #expand 		<em:version>__EXTENSION_VERSION__</em:version>
-		
+
 		<!-- This extension is compatible with all toolkit apps -->
 		<em:targetApplication>
 			<Description>
@@ -60,7 +60,7 @@
 				<em:maxVersion>3.0b4pre</em:maxVersion>
 			</Description>
 		</em:targetApplication>
-		
+
 		<em:type>2</em:type>
 
 #expand 		<em:targetPlatform>__TARGET_PLATFORM__</em:targetPlatform>
