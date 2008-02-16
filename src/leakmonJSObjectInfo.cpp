@@ -151,14 +151,14 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				const jschar *propname = JS_GetStringChars(nstr);
 				NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
 
- 				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
- 				// shaver didn't seem too scared when I described it to him.
- 				// XXX Should I use JS_LookupUCProperty or
- 				// JS_GetUCProperty?  What are the differences?
- 				jsval v;
- 				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
- 										 propname, JS_GetStringLength(nstr), &v);
- 				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
+				// shaver didn't seem too scared when I described it to him.
+				// XXX Should I use JS_LookupUCProperty or
+				// JS_GetUCProperty?  What are the differences?
+				jsval v;
+				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
+										 propname, JS_GetStringLength(nstr), &v);
+				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
  
 				leakmonJSObjectInfo *info;
 				void *key = reinterpret_cast<void*>(v);
