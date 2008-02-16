@@ -167,15 +167,17 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				const jschar *propname = JS_GetStringChars(nstr);
 				NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
 
-				leakmonJSObjectInfo *info =
-					new leakmonJSObjectInfo(desc->value);
-				NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+				leakmonJSObjectInfo *info;
+				void *key = reinterpret_cast<void*>(desc->value);
+				if (!aObjectsInReport.Get(key, &info)) {
+					info = new leakmonJSObjectInfo(desc->value);
+					NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+					aObjectsInReport.Put(key, info);
+				}
 
 				PropertyStruct *ps = mProperties.AppendElement();
 				ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
 				ps->mValue = info;
-
-				aObjectsInReport.Put(reinterpret_cast<void*>(mJSValue), info);
 			}
 		}
 

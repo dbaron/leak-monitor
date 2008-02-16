@@ -122,19 +122,17 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	for (PRInt32 i = count - 1; i >= 0; --i) {
 		JSObject *obj = static_cast<JSObject*>(aLeakedWrappedJSObjects[i]);
 		jsval val = OBJECT_TO_JSVAL(obj);
+		void *key = reinterpret_cast<void*>(val);
+		leakmonJSObjectInfo *info;
+		NS_ASSERTION(!objectsInReport.Get(key, &info), "got object twice");
 
-		leakmonJSObjectInfo *info = new leakmonJSObjectInfo(val);
+		info = new leakmonJSObjectInfo(val);
 		NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+		objectsInReport.Put(key, info);
 
 		mLeakedObjects.AppendObject(info);
 		stack[i].mName = lostring;
 		stack[i].mValue = info;
-
-		leakmonJSObjectInfo *dummy;
-		void *key = reinterpret_cast<void*>(val);
-		NS_ASSERTION(!objectsInReport.Get(key, &dummy), "got object twice");
-
-		objectsInReport.Put(key, info);
 	}
 
 	rv = NS_OK;
