@@ -271,7 +271,8 @@ NS_IMETHODIMP
 leakmonJSObjectInfo::GetPropertyNameAt(PRUint32 aIndex,
 		                               PRUnichar **aResult)
 {
-	PRUnichar *buf = NS_StringCloneData(mProperties[aIndex].mName);
+	PRUnichar *buf =
+		NS_StringCloneData(mProperties[PropertiesIndex(aIndex)].mName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
 	return NS_OK;
@@ -281,7 +282,7 @@ NS_IMETHODIMP
 leakmonJSObjectInfo::GetPropertyValueAt(PRUint32 aIndex,
                                         leakmonIJSObjectInfo **aResult)
 {
-	NS_ADDREF(*aResult = mProperties[aIndex].mValue);
+	NS_ADDREF(*aResult = mProperties[PropertiesIndex(aIndex)].mValue);
 	return NS_OK;
 }
 
