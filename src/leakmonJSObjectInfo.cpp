@@ -118,6 +118,53 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 }
 
 nsresult
+leakmonJSObjectInfo::AppendProperty(jsid aID, JSContext *aCx,
+                                    leakmonObjectsInReportTable &aObjectsInReport)
+{
+	jsval n;
+	JSBool ok = JS_IdToValue(aCx, aID, &n);
+	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+	// n should be an integer, a string, or an XML QName,
+	// AttributeName, or AnyName
+
+	// XXX This can execute JS code!  How bad is that?
+	// shaver didn't seem too scared when I described it to him.
+	// XXX Could I avoid JS_ValueToString and still handle XML objects
+	// correctly?
+	JSString *nstr = JS_ValueToString(aCx, n);
+	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
+
+	const jschar *propname = JS_GetStringChars(nstr);
+	NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
+
+	// XXX JS_GetUCProperty can execute JS code!  How bad is that?
+	// shaver didn't seem too scared when I described it to him.
+	// Since js_GetProperty starts with a call to js_LookupProperty,
+	// it's clear that JS_LookupUCProperty does less than
+	// JS_GetUCProperty, so prefer Lookup over Get (although it's not
+	// clear to me exactly what the differences are).
+	jsval v;
+	ok = JS_LookupUCProperty(aCx, JSVAL_TO_OBJECT(mJSValue),
+	                         propname, JS_GetStringLength(nstr), &v);
+	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
+
+	leakmonJSObjectInfo *info;
+	void *key = reinterpret_cast<void*>(v);
+	if (!aObjectsInReport.Get(key, &info)) {
+		info = new leakmonJSObjectInfo(v);
+		NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
+		aObjectsInReport.Put(key, info);
+	}
+
+	PropertyStruct *ps = mProperties.AppendElement();
+	ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
+	ps->mValue = info;
+
+	return NS_OK;
+}
+
+nsresult
 leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 {
 	mIsInitialized = PR_TRUE;
@@ -134,55 +181,28 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
 			// Use JS_PropertyIterator instead of JS_Enumerate since
 			// some enumerate hooks (e.g., on wrapped natives) execute
-			// code.
-			JSScopeProperty *sprop = nsnull;
-			while (JS_PropertyIterator(p, &sprop)) {
-				if (!(sprop->attrs & JSPROP_ENUMERATE) ||
-				    (sprop->flags & SPROP_IS_ALIAS))
+			// code.  But we can only do this is OBJ_IS_NATIVE(p).
+			if (OBJ_IS_NATIVE(p)) {
+				JSScopeProperty *sprop = nsnull;
+				while (JS_PropertyIterator(p, &sprop)) {
+					if (!(sprop->attrs & JSPROP_ENUMERATE) ||
+						(sprop->flags & SPROP_IS_ALIAS))
+						continue;
+
+					nsresult rv = AppendProperty(sprop->id, cx,
+					                             aObjectsInReport);
+					NS_ENSURE_SUCCESS(rv, rv);
+				}
+			} else {
+				JSIdArray* properties = JS_Enumerate(cx, p);
+				if (properties)
 					continue;
 
-				jsid id = sprop->id;
-
-				jsval n;
-				JSBool ok = JS_IdToValue(cx, id, &n);
-				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
-
-				// n should be an integer, a string, or an XML QName,
-				// AttributeName, or AnyName
-
-				// XXX This can execute JS code!  How bad is that?
-				// shaver didn't seem too scared when I described it to him.
-				// XXX Could I avoid JS_ValueToString and still handle
-				// XML objects correctly?
-				JSString *nstr = JS_ValueToString(cx, n);
-				NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
-
-				const jschar *propname = JS_GetStringChars(nstr);
-				NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
-
-				// XXX JS_GetUCProperty can execute JS code!  How bad is that?
-				// shaver didn't seem too scared when I described it to him.
-				// Since js_GetProperty starts with a call to
-				// js_LookupProperty, it's clear that
-				// JS_LookupUCProperty does less than JS_GetUCProperty,
-				// so prefer Lookup over Get (although it's not clear to
-				// me exactly what the differences are).
-				jsval v;
-				ok = JS_LookupUCProperty(cx, JSVAL_TO_OBJECT(mJSValue),
-										 propname, JS_GetStringLength(nstr), &v);
-				NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
- 
-				leakmonJSObjectInfo *info;
-				void *key = reinterpret_cast<void*>(v);
-				if (!aObjectsInReport.Get(key, &info)) {
-					info = new leakmonJSObjectInfo(v);
-					NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
-					aObjectsInReport.Put(key, info);
+				for (jsint i = properties->length - 1; i >= 0; --i) {
+					nsresult rv = AppendProperty(properties->vector[i], cx,
+					                             aObjectsInReport);
+					NS_ENSURE_SUCCESS(rv, rv);
 				}
-
-				PropertyStruct *ps = mProperties.AppendElement();
-				ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
-				ps->mValue = info;
 			}
 		}
 

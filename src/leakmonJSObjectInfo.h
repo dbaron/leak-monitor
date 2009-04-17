@@ -86,6 +86,9 @@ private:
 
 	nsTArray<PropertyStruct> mProperties;
 
+	nsresult AppendProperty(jsid aID, JSContext *aCx,
+	                        leakmonObjectsInReportTable &aObjectsInReport);
+
 	PRUint32 PropertiesIndex(PRUint32 i) {
 		// We store mProperties in backwards order.
 		return mProperties.Length() - (i + 1);
