@@ -320,19 +320,6 @@ leakmonService::GCRootTracer(JSTracer *trc, void *thing, uint32 kind)
 		                          &data->haveLeaks);
 }
 
-/* static */ intN JS_DLL_CALLBACK
-leakmonService::GCRootMapper(void *rp, const char *name, void *aData)
-{
-	FindGCRootData *data = static_cast<FindGCRootData*>(aData);
-
-	jsval *vp = static_cast<jsval*>(rp);
-	jsval v = *vp;
-	if (!JSVAL_IS_PRIMITIVE(v))
-		data->service->HandleRoot(JSVAL_TO_OBJECT(v), &data->haveLeaks);
-
-	return JS_MAP_GCROOT_NEXT;
-}
-
 /* static */ PLDHashOperator PR_CALLBACK
 leakmonService::ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
                                  PRUint32 number, void *arg)
