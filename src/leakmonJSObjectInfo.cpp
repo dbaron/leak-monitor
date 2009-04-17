@@ -145,8 +145,7 @@ leakmonJSObjectInfo::AppendProperty(jsid aID, JSContext *aCx,
 	// JS_GetUCProperty, so prefer Lookup over Get (although it's not
 	// clear to me exactly what the differences are).
 	jsval v;
-	ok = JS_LookupUCProperty(aCx, JSVAL_TO_OBJECT(mJSValue),
-	                         propname, JS_GetStringLength(nstr), &v);
+	ok = JS_LookupPropertyById(aCx, JSVAL_TO_OBJECT(mJSValue), aID, &v);
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
 	leakmonJSObjectInfo *info;
