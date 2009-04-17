@@ -48,11 +48,6 @@
 // Frozen APIs that require linking against NSPR
 #include "prprf.h"
 
-// Private JS APIs (for JSScopeProperty)
-#include "jsinterp.h" // prerequisite for jsscope.h (ugh!)
-#include "jscntxt.h" // prerequisite for jsscope.h (ugh!)
-#include "jsscope.h"
-
 leakmonJSObjectInfo::leakmonJSObjectInfo(jsval aJSValue)
 	: mJSValue(aJSValue)
 	, mIsInitialized(PR_FALSE)
@@ -132,16 +127,12 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
-			// Use JS_PropertyIterator instead of JS_Enumerate since
-			// some enumerate hooks (e.g., on wrapped natives) execute
-			// code.
-			JSScopeProperty *sprop = nsnull;
-			while (JS_PropertyIterator(p, &sprop)) {
-				if (!(sprop->attrs & JSPROP_ENUMERATE) ||
-				    (sprop->flags & SPROP_IS_ALIAS))
-					continue;
+			JSIdArray* properties = JS_Enumerate(cx, p);
+			if (!properties)
+				continue;
 
-				jsid id = sprop->id;
+			for (jsint i = 0; i < properties->length; ++i) {
+				jsid id = properties->vector[i];
 
 				jsval n;
 				JSBool ok = JS_IdToValue(cx, id, &n);
@@ -184,6 +175,8 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
 				ps->mValue = info;
 			}
+
+			JS_DestroyIdArray(cx, properties);
 		}
 
 		if (JS_ObjectIsFunction(cx, obj)) {
@@ -273,8 +266,7 @@ NS_IMETHODIMP
 leakmonJSObjectInfo::GetPropertyNameAt(PRUint32 aIndex,
 		                               PRUnichar **aResult)
 {
-	PRUnichar *buf =
-		NS_StringCloneData(mProperties[PropertiesIndex(aIndex)].mName);
+	PRUnichar *buf = NS_StringCloneData(mProperties[aIndex].mName);
 	NS_ENSURE_TRUE(buf, NS_ERROR_OUT_OF_MEMORY);
 	*aResult = buf;
 	return NS_OK;
@@ -284,7 +276,7 @@ NS_IMETHODIMP
 leakmonJSObjectInfo::GetPropertyValueAt(PRUint32 aIndex,
                                         leakmonIJSObjectInfo **aResult)
 {
-	NS_ADDREF(*aResult = mProperties[PropertiesIndex(aIndex)].mValue);
+	NS_ADDREF(*aResult = mProperties[aIndex].mValue);
 	return NS_OK;
 }
 
