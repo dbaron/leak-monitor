@@ -72,7 +72,7 @@ public:
 	NS_HIDDEN_(void) AppendSelfToString(nsString& aString);
 	NS_HIDDEN_(PRBool) IsInitialized() const { return mIsInitialized; }
 	NS_HIDDEN_(PropertyStruct&) PropertyStructAt(PRUint32 i) {
-		return mProperties[i];
+		return mProperties[PropertiesIndex(i)];
 	}
 
 	NS_DECL_ISUPPORTS
@@ -85,6 +85,11 @@ private:
 	PRBool mIsInitialized;
 
 	nsTArray<PropertyStruct> mProperties;
+
+	PRUint32 PropertiesIndex(PRUint32 i) {
+		// We store mProperties in backwards order.
+		return mProperties.Length() - (i + 1);
+	}
 
 	nsString mFileName;
 	PRUint32 mLineStart;
