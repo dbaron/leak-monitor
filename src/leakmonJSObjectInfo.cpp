@@ -195,7 +195,7 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 				}
 			} else {
 				JSIdArray* properties = JS_Enumerate(cx, p);
-				if (properties)
+				if (!properties)
 					continue;
 
 				for (jsint i = properties->length - 1; i >= 0; --i) {
