@@ -50,19 +50,19 @@ leakmon.jar:
 % locale leakmonitor el %locale/el/
 % locale leakmonitor nl %locale/nl/
 % locale leakmonitor ca %locale/ca/
-  content/leakAlert.xul
-  content/leakAlert.js
-  content/tree-utils.js
-  locale/en-US/leakAlert.dtd
-  locale/ru/leakAlert.dtd
-  locale/de/leakAlert.dtd
-  locale/fr/leakAlert.dtd
-  locale/cs/leakAlert.dtd
-  locale/ja/leakAlert.dtd
-  locale/es-ES/leakAlert.dtd
-  locale/it/leakAlert.dtd
-  locale/uk/leakAlert.dtd
-  locale/hu/leakAlert.dtd
-  locale/el/leakAlert.dtd
-  locale/nl/leakAlert.dtd
-  locale/ca/leakAlert.dtd
+  content/leakAlert.xul (content/leakAlert.xul)
+  content/leakAlert.js (content/leakAlert.js)
+  content/tree-utils.js (content/tree-utils.js)
+  locale/en-US/leakAlert.dtd (locale/en-US/leakAlert.dtd)
+  locale/ru/leakAlert.dtd (locale/ru/leakAlert.dtd)
+  locale/de/leakAlert.dtd (locale/de/leakAlert.dtd)
+  locale/fr/leakAlert.dtd (locale/fr/leakAlert.dtd)
+  locale/cs/leakAlert.dtd (locale/cs/leakAlert.dtd)
+  locale/ja/leakAlert.dtd (locale/ja/leakAlert.dtd)
+  locale/es-ES/leakAlert.dtd (locale/es-ES/leakAlert.dtd)
+  locale/it/leakAlert.dtd (locale/it/leakAlert.dtd)
+  locale/uk/leakAlert.dtd (locale/uk/leakAlert.dtd)
+  locale/hu/leakAlert.dtd (locale/hu/leakAlert.dtd)
+  locale/el/leakAlert.dtd (locale/el/leakAlert.dtd)
+  locale/nl/leakAlert.dtd (locale/nl/leakAlert.dtd)
+  locale/ca/leakAlert.dtd (locale/ca/leakAlert.dtd)
