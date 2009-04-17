@@ -307,7 +307,7 @@ struct TracerWithData : public JSTracer {
 	FindGCRootData *data;
 };
 
-/* static */ void JS_DLL_CALLBACK
+/* static */ void
 leakmonService::GCRootTracer(JSTracer *trc, void *thing, uint32 kind)
 {
 	FindGCRootData *data = static_cast<TracerWithData*>(trc)->data;

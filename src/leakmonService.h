@@ -95,8 +95,7 @@ private:
 		ReportLeaks(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		            PRUint32 number, void *arg);
 	void HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks);
-	JS_STATIC_DLL_CALLBACK(void)
-		GCRootTracer(JSTracer *trc, void *thing, uint32 kind);
+	static void GCRootTracer(JSTracer *trc, void *thing, uint32 kind);
 
 	PR_STATIC_CALLBACK(PLDHashOperator)
 		ResetRootedLists(PLDHashTable *table, PLDHashEntryHdr *hdr,
