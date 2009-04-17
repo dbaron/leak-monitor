@@ -49,6 +49,8 @@
 #include "prprf.h"
 
 // Private JS APIs (for JSScopeProperty)
+#include "jsinterp.h" // prerequisite for jsscope.h (ugh!)
+#include "jscntxt.h" // prerequisite for jsscope.h (ugh!)
 #include "jsscope.h"
 
 leakmonJSObjectInfo::leakmonJSObjectInfo(jsval aJSValue)
