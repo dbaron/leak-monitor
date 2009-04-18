@@ -36,7 +36,7 @@ rm -rf "$TMPDIR"
 
 DATE="$(LC_TIME=C TZ=UTC date +'%-d %b %Y %H:%M:%S') -0000"
 
-find . -type f | grep -v ".svn" | sed 's/^\.\///' | while read FNAME
+find . -type f | grep -v ".hg" | sed 's/^\.\///' | while read FNAME
 do
         cat <<EOM
 diff -N b/extensions/leak-monitor/$FNAME
