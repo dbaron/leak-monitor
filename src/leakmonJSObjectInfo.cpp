@@ -48,11 +48,6 @@
 // Frozen APIs that require linking against NSPR
 #include "prprf.h"
 
-// Private JS APIs (for JSScopeProperty)
-#include "jsinterp.h" // prerequisite for jsscope.h (ugh!)
-#include "jscntxt.h" // prerequisite for jsscope.h (ugh!)
-#include "jsscope.h"
-
 leakmonJSObjectInfo::leakmonJSObjectInfo(jsval aJSValue)
 	: mJSValue(aJSValue)
 	, mIsInitialized(PR_FALSE)
@@ -178,30 +173,20 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
-			// Use JS_PropertyIterator instead of JS_Enumerate since
-			// some enumerate hooks (e.g., on wrapped natives) execute
-			// code.  But we can only do this is OBJ_IS_NATIVE(p).
-			if (OBJ_IS_NATIVE(p)) {
-				JSScopeProperty *sprop = nsnull;
-				while (JS_PropertyIterator(p, &sprop)) {
-					if (!(sprop->attrs & JSPROP_ENUMERATE) ||
-						(sprop->flags & SPROP_IS_ALIAS))
-						continue;
+			// JS_NewPropertyIterator has the nice property that it
+			// avoids JS_Enumerate on native objects (where it can
+			// execute code) and uses the scope properties, but doesn't
+			// require this code to use the unstable OBJ_IS_NATIVE API.
+			JSObject *etor = JS_NewPropertyIterator(cx, p);
+			// We're in a JSAutoRequest, so no need to protect |etor|
+			// from GC.
+			if (!etor)
+			    return NS_ERROR_OUT_OF_MEMORY;
 
-					nsresult rv = AppendProperty(sprop->id, cx,
-					                             aObjectsInReport);
-					NS_ENSURE_SUCCESS(rv, rv);
-				}
-			} else {
-				JSIdArray* properties = JS_Enumerate(cx, p);
-				if (!properties)
-					continue;
-
-				for (jsint i = properties->length - 1; i >= 0; --i) {
-					nsresult rv = AppendProperty(properties->vector[i], cx,
-					                             aObjectsInReport);
-					NS_ENSURE_SUCCESS(rv, rv);
-				}
+			jsid id;
+			while (JS_NextProperty(cx, etor, &id) && id != JSVAL_VOID) {
+				nsresult rv = AppendProperty(id, cx, aObjectsInReport);
+				NS_ENSURE_SUCCESS(rv, rv);
 			}
 		}
 
