@@ -38,11 +38,11 @@
 <!ENTITY leakAlert.title "Nova Alerta de Fuita">
 <!ENTITY leakAlert.explanation "La següent seqüència JavaScript sorgida de finestra que ha estat tancada recentment es manté al codi nadiu.">
 <!ENTITY leakAlert.reclaimed.title "Alerta de Fuita Reclamada">
-<!ENTITY leakAlert.reclaimed.explanation "Els objectes javascript d&apos;aquesta finestra han estat prèviament marcats com a fugitius, però alguna de la memòria ha estat reclamada.Els següents objectes continuaran fugits.">
+<!ENTITY leakAlert.reclaimed.explanation "Els objectes javascript d'aquesta finestra han estat prèviament marcats com a fugitius, però alguna de la memòria ha estat reclamada.Els següents objectes continuaran fugits.">
 <!ENTITY leakAlert.copyReport "Copia Registre a Portapapers">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Nom">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Nom de l&apos;arxiu">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Nom de l'arxiu">
 <!ENTITY leakAlert.lwjstree.columnLabel.linestart "Inici">
 <!ENTITY leakAlert.lwjstree.columnLabel.lineend "Final">
 <!ENTITY leakAlert.lwjstree.columnLabel.string "Clau de Representació">

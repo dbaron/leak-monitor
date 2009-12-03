@@ -35,14 +35,14 @@
    - the terms of any one of the MPL, the GPL or the LGPL.
    -
    - ***** END LICENSE BLOCK ***** -->
-<!ENTITY leakAlert.title "Нова втрата пам&apos;яті">
-<!ENTITY leakAlert.explanation "Наступні об&apos;єкти JavaScript належать до закритого вікна, але все ще знаходяться в пам&apos;яті">
-<!ENTITY leakAlert.reclaimed.title "Повернення втрати пам&apos;яті">
-<!ENTITY leakAlert.reclaimed.explanation "Об&apos;єкти JavaScript з цього вікна були вже відзвітовані як втрачені, але частина пам&apos;яті була повернена. Наступні об&apos;єкти є все ще є втраченими.">
-<!ENTITY leakAlert.copyReport "Скопіювати звіт в пам&apos;ять">
+<!ENTITY leakAlert.title "Нова втрата пам'яті">
+<!ENTITY leakAlert.explanation "Наступні об'єкти JavaScript належать до закритого вікна, але все ще знаходяться в пам'яті">
+<!ENTITY leakAlert.reclaimed.title "Повернення втрати пам'яті">
+<!ENTITY leakAlert.reclaimed.explanation "Об'єкти JavaScript з цього вікна були вже відзвітовані як втрачені, але частина пам'яті була повернена. Наступні об'єкти є все ще є втраченими.">
+<!ENTITY leakAlert.copyReport "Скопіювати звіт в пам'ять">
 
 <!ENTITY leakAlert.lwjstree.columnLabel.name "Назва">
-<!ENTITY leakAlert.lwjstree.columnLabel.filename "Ім&apos;я файлу">
+<!ENTITY leakAlert.lwjstree.columnLabel.filename "Ім'я файлу">
 <!ENTITY leakAlert.lwjstree.columnLabel.linestart "Початок">
 <!ENTITY leakAlert.lwjstree.columnLabel.lineend "Кінець">
 <!ENTITY leakAlert.lwjstree.columnLabel.string "Представлення стрічки">
