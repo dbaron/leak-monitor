@@ -173,13 +173,15 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
+			// Protect newly-created objects (etor) from GC.  (And
+			// protecting |etor| should in turn protect |id|.)
+			JSAutoLocalRootScope lrs(cx);
+
 			// JS_NewPropertyIterator has the nice property that it
 			// avoids JS_Enumerate on native objects (where it can
 			// execute code) and uses the scope properties, but doesn't
 			// require this code to use the unstable OBJ_IS_NATIVE API.
 			JSObject *etor = JS_NewPropertyIterator(cx, p);
-			// We're in a JSAutoRequest, so no need to protect |etor|
-			// from GC.
 			if (!etor)
 			    return NS_ERROR_OUT_OF_MEMORY;
 
