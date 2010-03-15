@@ -75,8 +75,8 @@ compatibility with Mozilla's releases.  I just used Mozilla's try
 server (http://wiki.mozilla.org/Build:TryServer) to do that for me.
 The make-patch.sh script, included, generates a patch for the try server
 when run from the leak-monitor directory.  On Linux x86_64, I just do
-the build on Fedora 8.  (Note that doing this doesn't give you XPIs; you
-need to zip them manually from the extensions/ subdirectory of the
+the build on Fedora 11.  (Note that doing this doesn't give you XPIs;
+you need to zip them manually from the extensions/ subdirectory of the
 archive.)
 
 Detailed instructions for using the try server:
