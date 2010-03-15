@@ -56,14 +56,17 @@
 // Frozen APIs that require linking against NSPR.
 #include "prthread.h"
 
+// Unfrozen API, unrolled per version
+#include "nsIJSRuntimeServiceShim.h"
+
 // Unfrozen APIs (XXX should unroll these, per-version)
-#include "nsIJSRuntimeService.h"
 #include "nsITimer.h"
 
 // XPCOM glue APIs in 1.8
 #include "nsCOMPtr.h"
 #include "pldhash.h"
 #include "nsWeakReference.h"
+#include "nsAutoPtr.h"
 
 // XPCOM glue APIs in 1.9
 #include "nsVoidArray.h"
@@ -117,7 +120,7 @@ private:
 		AppendToArray(PLDHashTable *table, PLDHashEntryHdr *hdr,
 		              PRUint32 number, void *arg);
 
-	nsCOMPtr<nsIJSRuntimeService> mJSRuntimeService;
+	nsRefPtr<nsIJSRuntimeServiceShim> mJSRuntimeService;
 	JSRuntime *mJSRuntime;
 	JSContext *mJSContext; // some JS API functions require a context, and
 	                       // it seems safer to have our own than pass
