@@ -82,9 +82,9 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 		PR_snprintf(buf, sizeof(buf), "%d", i);
 		aString.Assign(NS_ConvertASCIItoUTF16(buf));
 	} else if (JSVAL_IS_DOUBLE(aJSValue)) {
-		jsdouble *d = JSVAL_TO_DOUBLE(aJSValue);
+		jsdouble d = JSVAL_TO_DOUBLE(aJSValue);
 		char buf[50];
-		PR_snprintf(buf, sizeof(buf), "%f", *d);
+		PR_snprintf(buf, sizeof(buf), "%f", d);
 		aString.Assign(NS_ConvertASCIItoUTF16(buf));
 	} else if (JSVAL_IS_BOOLEAN(aJSValue)) {
 		JSBool b = JSVAL_TO_BOOLEAN(aJSValue);
@@ -94,14 +94,13 @@ ValueToString(JSContext *cx, jsval aJSValue, nsString& aString)
 			aString.Assign(kFalse, STRLEN_ARRAY(kFalse));
 	} else if (JSVAL_IS_STRING(aJSValue)) {
 		JSString *str = JSVAL_TO_STRING(aJSValue);
-		jschar *chars = JS_GetStringChars(str);
+		size_t len;
+		const jschar *chars = JS_GetStringCharsAndLength(cx, str, &len);
 		NS_ASSERTION(chars, "out of memory");
 		if (chars) {
-			size_t len = JS_GetStringLength(str);
-
 			NS_ASSERTION(sizeof(jschar) == sizeof(PRUnichar),
 						 "char size mismatch");
-			aString.Assign(reinterpret_cast<PRUnichar*>(chars), len);
+			aString.Assign(reinterpret_cast<const PRUnichar*>(chars), len);
 		}
 	} else {
 		JSObject *obj = JSVAL_TO_OBJECT(aJSValue);
@@ -130,7 +129,8 @@ leakmonJSObjectInfo::AppendProperty(jsid aID, JSContext *aCx,
 	JSString *nstr = JS_ValueToString(aCx, n);
 	NS_ENSURE_TRUE(nstr, NS_ERROR_OUT_OF_MEMORY);
 
-	const jschar *propname = JS_GetStringChars(nstr);
+	size_t propname_len;
+	const jschar *propname = JS_GetStringCharsAndLength(aCx, nstr, &propname_len);
 	NS_ENSURE_TRUE(propname, NS_ERROR_OUT_OF_MEMORY);
 
 	// XXX JS_GetUCProperty can execute JS code!  How bad is that?
@@ -144,7 +144,7 @@ leakmonJSObjectInfo::AppendProperty(jsid aID, JSContext *aCx,
 	NS_ENSURE_TRUE(ok, NS_ERROR_FAILURE);
 
 	leakmonJSObjectInfo *info;
-	void *key = reinterpret_cast<void*>(v);
+	void *key = reinterpret_cast<void*>(JSVAL_BITS(v));
 	if (!aObjectsInReport.Get(key, &info)) {
 		info = new leakmonJSObjectInfo(v);
 		NS_ENSURE_TRUE(info, NS_ERROR_OUT_OF_MEMORY);
@@ -152,7 +152,7 @@ leakmonJSObjectInfo::AppendProperty(jsid aID, JSContext *aCx,
 	}
 
 	PropertyStruct *ps = mProperties.AppendElement();
-	ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname));
+	ps->mName.Assign(reinterpret_cast<const PRUnichar*>(propname), propname_len);
 	ps->mValue = info;
 
 	return NS_OK;
@@ -173,9 +173,9 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
-			// Protect newly-created objects (etor) from GC.  (And
-			// protecting |etor| should in turn protect |id|.)
-			JSAutoLocalRootScope lrs(cx);
+			// Stack-scanning protects newly-created objects
+			// (etor) from GC.  (And protecting |etor|
+			// should in turn protect |id|.)
 
 			// JS_NewPropertyIterator has the nice property that it
 			// avoids JS_Enumerate on native objects (where it can
@@ -186,7 +186,7 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 			    return NS_ERROR_OUT_OF_MEMORY;
 
 			jsid id;
-			while (JS_NextProperty(cx, etor, &id) && id != JSVAL_VOID) {
+			while (JS_NextProperty(cx, etor, &id) && !JSID_IS_VOID(id)) {
 				nsresult rv = AppendProperty(id, cx, aObjectsInReport);
 				NS_ENSURE_SUCCESS(rv, rv);
 			}

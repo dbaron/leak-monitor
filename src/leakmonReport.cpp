@@ -122,7 +122,7 @@ leakmonReport::Init(void *aIdent, PRUint32 aReason,
 	for (PRInt32 i = count - 1; i >= 0; --i) {
 		JSObject *obj = static_cast<JSObject*>(aLeakedWrappedJSObjects[i]);
 		jsval val = OBJECT_TO_JSVAL(obj);
-		void *key = reinterpret_cast<void*>(val);
+		void *key = reinterpret_cast<void*>(JSVAL_BITS(val));
 		leakmonJSObjectInfo *info;
 		NS_ASSERTION(!objectsInReport.Get(key, &info), "got object twice");
 
