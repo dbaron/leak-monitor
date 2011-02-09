@@ -38,18 +38,8 @@
 // Internal includes
 #include "leakmonService.h"
 
-// Frozen APIs
-#include "nsICategoryManager.h"
-
-// XPCOM glue APIs
-#include "mozilla/GenericFactory.h"
+// XPCOM APIs
 #include "mozilla/ModuleUtils.h"
-#include "nsServiceManagerUtils.h"
-#include "nsStringAPI.h"
-
-// ???
-#include "nsXPCOMCID.h"
-#include "nsIAppStartupNotifier.h"
 
 // 1ee1b3fc-e896-4ac9-870f-43d3a0581dc8
 #define NS_LEAKMONITOR_SERVICE_CID \
