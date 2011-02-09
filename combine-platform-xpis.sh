@@ -97,6 +97,30 @@ do
 	mv "$TMPDIR/install.rdf" "$TMPDIR/out/install.rdf"
 done
 
+# Emit appropriate 'interfaces' and 'components' lines for Firefox 4 and
+# up, as described in
+# https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Gecko_2.0
+# NOTE that this assumes the build was done based on a pre-2.0 Gecko.
+# It will probably require revision when that is no longer the case.
+MANIFEST="$TMPDIR/out/chrome.manifest"
+find "$TMPDIR/out/components" -name "*.xpt" | sed "s!^$TMPDIR/out/!!" | while read FNAME
+do
+	echo "interfaces $FNAME" >> "$MANIFEST"
+done
+"ls" "$TMPDIR/out/platform" | while read PLATFORM
+do
+	find "$TMPDIR/out/platform/$PLATFORM" -type f | sed "s!^$TMPDIR/out/!!" | while read FNAME
+	do
+		if [ "$PLATFORM" = "Darwin" ]
+		then
+			echo "binary-component $FNAME ABI=Darwin_x86-gcc3" >> "$MANIFEST"
+			echo "binary-component $FNAME ABI=Darwin_ppc-gcc3" >> "$MANIFEST"
+		else
+			echo "binary-component $FNAME ABI=$PLATFORM" >> "$MANIFEST"
+		fi
+	done
+done
+
 (cd "$TMPDIR/out" && zip ../out.zip $(find . -type f))
 mv "$TMPDIR/out.zip" "$DEST"
 
