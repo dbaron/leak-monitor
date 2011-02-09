@@ -47,6 +47,9 @@ MODULE		= leakmonitor
 LIBRARY_NAME	= leakmon
 XPI_NAME	= $(MODULE)
 IS_COMPONENT	= 1
+# Currently needed only for things included in static builds, but may as
+# well give MODULE_NAME.
+MODULE_NAME	= leakMonitorModule
 
 # bug 376041 doesn't have much info, but mfinkle says this is recommended
 USE_STATIC_LIBS	= 1

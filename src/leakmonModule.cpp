@@ -42,7 +42,8 @@
 #include "nsICategoryManager.h"
 
 // XPCOM glue APIs
-#include "nsIGenericFactory.h"
+#include "mozilla/GenericFactory.h"
+#include "mozilla/ModuleUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringAPI.h"
 
@@ -63,56 +64,32 @@
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(leakmonService, Init)
 
-static NS_METHOD
-RegisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile* aPath,
-                          const char *aLoaderStr, const char *aType,
-                          const nsModuleComponentInfo *aInfo)
-{
-	nsresult rv;
-	nsCOMPtr<nsICategoryManager> catMan =
-		do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
-	NS_ENSURE_SUCCESS(rv, rv);
+NS_DEFINE_NAMED_CID(NS_LEAKMONITOR_SERVICE_CID);
 
-	nsCString value;
-	value.Append("service,");
-	value.Append(aInfo->mContractID);
-	rv = catMan->AddCategoryEntry(APPSTARTUP_CATEGORY,
-	                              aInfo->mContractID, value.get(),
-	                              PR_TRUE, PR_TRUE, nsnull);
-	NS_ENSURE_SUCCESS(rv, rv);
-
-	return NS_OK;
-}
-
-static NS_METHOD
-UnregisterServiceForStartup(nsIComponentManager *aCompMgr, nsIFile *aPath,
-                            const char *aLoaderStr,
-                            const nsModuleComponentInfo *aInfo)
-{
-	nsresult rv;
-	nsCOMPtr<nsICategoryManager> catMan =
-		do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
-	NS_ENSURE_SUCCESS(rv, rv);
-
-	rv = catMan->DeleteCategoryEntry(APPSTARTUP_CATEGORY,
-	                                 aInfo->mContractID,
-	                                 PR_TRUE);
-	NS_ENSURE_SUCCESS(rv, rv);
-
-	return NS_OK;
-}
-
-
-static const nsModuleComponentInfo components[] =
-{
-	{
-		"leakmonService",
-		NS_LEAKMONITOR_SERVICE_CID,
-		NS_LEAKMONITOR_SERVICE_CONTRACTID,
-		leakmonServiceConstructor,
-		RegisterServiceForStartup,
-		UnregisterServiceForStartup
-	}
+static const mozilla::Module::CIDEntry kLeakMonitorCIDs[] = {
+	{ &kNS_LEAKMONITOR_SERVICE_CID, true, NULL, leakmonServiceConstructor },
+	{ NULL }
 };
 
-NS_IMPL_NSGETMODULE(leakmonModule, components)
+static const mozilla::Module::ContractIDEntry kLeakMonitorContracts[] = {
+	{ NS_LEAKMONITOR_SERVICE_CONTRACTID, &kNS_LEAKMONITOR_SERVICE_CID },
+	{ NULL }
+};
+
+static const mozilla::Module::CategoryEntry kLeakMonitorCategories[] = {
+	{ "profile-after-change" , "leak monitor module",
+	  NS_LEAKMONITOR_SERVICE_CONTRACTID },
+	{ NULL }
+};
+
+static const mozilla::Module kLeakMonitorModule = {
+	mozilla::Module::kVersion,
+	kLeakMonitorCIDs,
+	kLeakMonitorContracts,
+	kLeakMonitorCategories,
+	NULL,
+	NULL,
+	NULL
+};
+
+NSMODULE_DEFN(leakMonitorModule) = &kLeakMonitorModule;

@@ -115,7 +115,7 @@ leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
 {
 	if (!PL_strcmp(aTopic, gQuitApplicationTopic)) {
 		mHaveQuitApp = PR_TRUE;
-	} else if (!PL_strcmp(aTopic, APPSTARTUP_TOPIC)) {
+	} else if (!PL_strcmp(aTopic, "profile-after-change")) {
 	} else if (!PL_strcmp(aTopic, "cycle-collector-begin")) {
 		// We want to call DidGC once cycle collection is done.  So
 		// we'll make a timer.
