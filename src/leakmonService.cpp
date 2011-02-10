@@ -59,7 +59,6 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringAPI.h"
-#include "nsID.h"
 
 // Unfrozen APIs that shouldn't hurt
 // filed https://bugzilla.mozilla.org/show_bug.cgi?id=335977
@@ -133,9 +132,6 @@ leakmonService::Observe(nsISupports *aSubject, const char *aTopic,
 	return NS_OK;
 }
 
-static NS_DEFINE_IID(kIJSRuntimeServiceV1IID, NS_IJSRUNTIMESERVICE_v1_IID);
-static NS_DEFINE_IID(kIJSRuntimeServiceV2IID, NS_IJSRUNTIMESERVICE_v2_IID);
-
 nsresult
 leakmonService::Init()
 {
@@ -147,17 +143,9 @@ leakmonService::Init()
 
 	nsresult rv;
 
-	nsCOMPtr<nsISupports> jsrts =
+	mJSRuntimeService =
 		do_GetService("@mozilla.org/js/xpc/RuntimeService;1", &rv);
 	NS_ENSURE_SUCCESS(rv, rv);
-
-	if (NS_FAILED(jsrts->QueryInterface(kIJSRuntimeServiceV1IID,
-	                       getter_AddRefs(mJSRuntimeService)))) {
-		if (NS_FAILED(jsrts->QueryInterface(kIJSRuntimeServiceV2IID,
-		                       getter_AddRefs(mJSRuntimeService)))) {
-			return NS_NOINTERFACE;
-		}
-	}
 
 	rv = mJSRuntimeService->GetRuntime(&mJSRuntime);
 	NS_ENSURE_SUCCESS(rv, rv);
