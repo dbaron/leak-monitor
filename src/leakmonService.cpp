@@ -76,6 +76,7 @@ static const char gQuitApplicationTopic[] = "quit-application";
 
 leakmonService::leakmonService()
 	: mJSRuntime(nsnull)
+	, mJSContext(nsnull)
 	, mGeneration(0)
 	, mHaveQuitApp(PR_FALSE)
 	, mNesting(PR_FALSE)
