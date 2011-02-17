@@ -7,7 +7,7 @@ MOZREV=FIREFOX_4_0b11_RELEASE # any revision syntax that hg accepts
 TMPDIR="$(mktemp -d)" || exit 1
 pushd "$TMPDIR" > /dev/null 2>&1 || exit 1
 
-for FILE in "browser/confvars.sh" "browser/installer/windows/packages-static" "browser/installer/unix/packages-static"
+for FILE in "browser/confvars.sh" "browser/installer/package-manifest.in"
 do
     mkdir -p "$(echo "$FILE" | sed 's,/[^/]*$,,;s,^,a/,')"
     wget -q "$MOZRELEASE/raw-file/$MOZREV/$FILE" -O "a/$FILE"
@@ -16,19 +16,9 @@ done
 cp -r a b
 
 perl -pi -e 's/MOZ_EXTENSIONS_DEFAULT=" /MOZ_EXTENSIONS_DEFAULT=" leak-monitor /' b/browser/confvars.sh || exit 1
-cat >> b/browser/installer/windows/packages-static <<EOM
-bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\components\\leakmon.dll
-bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\components\\leakmonitor.xpt
-bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\chrome\\leakmon.jar
-bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\chrome.manifest
-bin\\extensions\\{1ed6b678-1f93-4660-a9c5-01af87b323d3}\\install.rdf
-EOM
-cat >> b/browser/installer/unix/packages-static <<EOM
-bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/chrome.manifest
-bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/components/leakmonitor.xpt
-bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/components/libleakmon.so
-bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/install.rdf
-bin/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/chrome/leakmon.jar
+cat >> b/browser/installer/package-manifest.in <<EOM
+
+@BINPATH@/extensions/{972ce4c6-7e08-4474-a285-3208198ce6fd}/*
 EOM
 diff -u -r a b
 popd > /dev/null
