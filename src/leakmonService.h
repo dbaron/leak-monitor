@@ -46,17 +46,17 @@
 // Code within this extension
 #include "leakmonIService.h"
 
-// Frozen APIs
+// formerly-frozen APIs
 #include "nsISupports.h"
 #include "nsIObserver.h"
 
-// Frozen APIs that require linking against JS.
+// "stable" JS API (requires linking against JS)
 #include "jsapi.h"
 
 // Frozen APIs that require linking against NSPR.
 #include "prthread.h"
 
-// Unfrozen APIs (XXX should unroll these, per-version)
+// never-frozen APIs
 #include "nsIJSRuntimeService.h"
 #include "nsITimer.h"
 

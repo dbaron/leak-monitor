@@ -44,7 +44,7 @@
 #include "leakmonService.h"
 #include "leakmonReport.h"
 
-// Frozen APIs
+// formerly-frozen APIs
 #include "nsIObserverService.h"
 #include "nsIWindowWatcher.h"
 #include "nsIDOMWindow.h"

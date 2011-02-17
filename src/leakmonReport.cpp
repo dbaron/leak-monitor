@@ -48,7 +48,7 @@
 #include "pldhash.h"
 #include "nsTPtrArray.h"
 
-// Frozen APIs that require linking against JS
+// "stable" JS API (requires linking against JS)
 #include "jsapi.h"
 
 // Frozen APIs that require linking against NSPR

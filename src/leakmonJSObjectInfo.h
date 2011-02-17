@@ -49,7 +49,7 @@
 #include "nsAutoPtr.h"
 #include "nsDataHashtable.h"
 
-// Frozen APIs
+// "stable" JS API (requires linking against JS)
 #include "jsapi.h"
 
 class leakmonJSObjectInfo;

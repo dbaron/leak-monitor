@@ -41,7 +41,7 @@
 #include "leakmonJSObjectInfo.h"
 #include "leakmonService.h"
 
-// Frozen APIs that require linking against JS
+// "stable" JS API (requires linking against JS)
 #include "jsapi.h"
 #include "jsdbgapi.h"
 
