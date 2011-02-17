@@ -78,10 +78,16 @@ CPPSRCS		= \
 		leakmonJSObjectInfo.cpp \
 		$(NULL)
 
+ifdef JS_SHARED_LIBRARY
+MOZ_JS_LINK	= $(MOZ_JS_LIBS)
+else
+MOZ_JS_LINK	= $(LIBXUL_LIBS)
+endif
+
 # Should I need $(OS_LIBS) ?
 EXTRA_DSO_LDOPTS += \
 		$(XPCOM_GLUE_LDOPTS) \
-		$(MOZ_JS_LIBS) \
+		$(MOZ_JS_LINK) \
 		$(MOZ_COMPONENT_NSPR_LIBS) \
 		$(NULL)
 
