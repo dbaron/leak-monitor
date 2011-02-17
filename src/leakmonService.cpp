@@ -60,10 +60,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsStringAPI.h"
 
-// Unfrozen APIs that shouldn't hurt
-// filed https://bugzilla.mozilla.org/show_bug.cgi?id=335977
-#include "nsIAppStartupNotifier.h"
-
 /* static */ leakmonService* leakmonService::gService = nsnull;
 
 static const char gQuitApplicationTopic[] = "quit-application";
