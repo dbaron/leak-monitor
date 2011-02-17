@@ -170,6 +170,15 @@ leakmonJSObjectInfo::Init(leakmonObjectsInReportTable &aObjectsInReport)
 
 	if (!JSVAL_IS_PRIMITIVE(mJSValue)) {
 		JSObject *obj = JSVAL_TO_OBJECT(mJSValue);
+
+		// All of the objects in obj's prototype chain, and all
+		// objects reachable from JS_NewPropertyIterator should
+		// (I think?) be in the same compartment.
+		JSAutoEnterCompartment ac;
+		if (!ac.enter(cx, obj)) {
+			return NS_ERROR_FAILURE;
+		}
+
 		JSObject *p;
 
 		for (p = obj; p; p = JS_GetPrototype(cx, p)) {
