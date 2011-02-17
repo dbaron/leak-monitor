@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Which source should we patch?
-MOZRELEASE=http://hg.mozilla.org/releases/mozilla-1.9.1/
-MOZREV=FIREFOX_3_1b3_RELEASE  # any revision syntax that hg accepts
+MOZRELEASE=http://hg.mozilla.org/mozilla-central/
+MOZREV=FIREFOX_4_0b11_RELEASE # any revision syntax that hg accepts
 
 TMPDIR="$(mktemp -d)" || exit 1
 pushd "$TMPDIR" > /dev/null 2>&1 || exit 1
