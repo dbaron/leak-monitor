@@ -66,7 +66,7 @@ NS_IMPL_ISUPPORTS1(leakmonReport, leakmonIReport)
 
 nsresult
 leakmonReport::Init(void *aIdent, PRUint32 aReason,
-		            const nsVoidArray &aLeakedWrappedJSObjects)
+                    const nsVoidArray &aLeakedWrappedJSObjects)
 {
 	nsresult rv;
 
