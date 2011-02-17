@@ -54,15 +54,6 @@ MODULE_NAME	= leakMonitorModule
 # bug 376041 doesn't have much info, but mfinkle says this is recommended
 USE_STATIC_LIBS	= 1
 
-REQUIRES	= \
-		  xpcom \
-		  js \
-		  xpconnect \
-		  embedcomponents \
-		  dom \
-		  xulapp \
-		  $(NULL)
-
 DEFINES		+= -DMOZILLA_STRICT_API
 
 XPIDLSRCS	= \
