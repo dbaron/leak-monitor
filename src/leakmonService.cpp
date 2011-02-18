@@ -227,6 +227,15 @@ leakmonService::DidGC()
 void
 leakmonService::HandleRoot(JSObject *aRoot, PRBool *aHaveLeaks)
 {
+	// All of the objects in aRoot's parent chain should be in the
+	// same compartment, so this should suffice for the
+	// JS_GetProperty call on global below.
+	JSAutoEnterCompartment ac;
+	if (!ac.enter(mJSContext, aRoot)) {
+		// out of memory?
+		return;
+	}
+
 	JSObject *global, *parent = aRoot;
 	do {
 		global = parent;
