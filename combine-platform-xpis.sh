@@ -65,6 +65,14 @@ do
 	mkdir "$TMPDIR/in/platform"
 	mkdir "$TMPDIR/in/platform/$PLATFORM"
 	mkdir "$TMPDIR/in/platform/$PLATFORM/components"
+
+	# Remove the components.manifest and interfaces.manifest
+	# generated when building with Gecko 2.0.  We'll replace their
+	# contents below.
+	"rm" -f "$TMPDIR/in/components/interfaces.manifest" "$TMPDIR/in/components/components.manifest"
+	grep -v "^manifest components/\(interfaces\|components\)\.manifest$" "$TMPDIR/in/chrome.manifest" > "$TMPDIR/in/chrome.manifest.replacement"
+	"mv" "$TMPDIR/in/chrome.manifest.replacement" "$TMPDIR/in/chrome.manifest"
+
 	(cd "$TMPDIR/in" && find components -type f -a -not -name "*.xpt") | while read BINARY
 	do
 		mv "$TMPDIR/in/$BINARY" "$TMPDIR/in/platform/$PLATFORM/$BINARY"
@@ -100,8 +108,6 @@ done
 # Emit appropriate 'interfaces' and 'components' lines for Firefox 4 and
 # up, as described in
 # https://developer.mozilla.org/en/XPCOM/XPCOM_changes_in_Gecko_2.0
-# NOTE that this assumes the build was done based on a pre-2.0 Gecko.
-# It will probably require revision when that is no longer the case.
 MANIFEST="$TMPDIR/out/chrome.manifest"
 find "$TMPDIR/out/components" -name "*.xpt" | sed "s!^$TMPDIR/out/!!" | while read FNAME
 do
