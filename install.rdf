@@ -62,6 +62,7 @@
 		</em:targetApplication>
 
 		<em:type>2</em:type>
+		<em:unpack>true</em:unpack>
 
 #expand 		<em:targetPlatform>__TARGET_PLATFORM__</em:targetPlatform>
 
