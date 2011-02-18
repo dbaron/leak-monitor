@@ -18,7 +18,7 @@ cp -r a b
 perl -pi -e 's/MOZ_EXTENSIONS_DEFAULT=" /MOZ_EXTENSIONS_DEFAULT=" leak-monitor /' b/browser/confvars.sh || exit 1
 cat >> b/browser/installer/package-manifest.in <<EOM
 
-@BINPATH@/leakmonitor.xpi
+@BINPATH@/extensions/{1ed6b678-1f93-4660-a9c5-01af87b323d3}/*
 EOM
 diff -u -r a b
 popd > /dev/null
@@ -45,11 +45,5 @@ EOM
         else 
             echo "@@ -0,0 +1,$LEN @@"
         fi
-        # Hack the root makefile to put the resulting XPI in dist/bin.
-        if [ "$FNAME" == "Makefile.in" ]
-        then
-            cat $FNAME | sed 's!^XPI_PKGNAME.*!XPI_PKGNAME	= ../bin/$(MODULE)!;s/^/\+/'
-        else
-            cat $FNAME | sed 's/^/\+/'
-        fi
+        cat $FNAME | sed 's/^/\+/'
 done
