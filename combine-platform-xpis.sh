@@ -101,7 +101,7 @@ do
 
 	# Fix the targetPlatform we generated for Universal binaries to
 	# represent only what is really supported.
-	cat "$TMPDIR/out/install.rdf" | sed '/<em:targetPlatform>Darwin</{ h; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_x86-gcc3</; G; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_ppc-gcc3</}' > "$TMPDIR/install.rdf"
+	cat "$TMPDIR/out/install.rdf" | sed '/<em:targetPlatform>Darwin</{ h; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_x86-gcc3</; G; s/<em:targetPlatform>Darwin</<em:targetPlatform>Darwin_x86_64-gcc3</}' > "$TMPDIR/install.rdf"
 	mv "$TMPDIR/install.rdf" "$TMPDIR/out/install.rdf"
 done
 
@@ -120,7 +120,7 @@ do
 		if [ "$PLATFORM" = "Darwin" ]
 		then
 			echo "binary-component $FNAME ABI=Darwin_x86-gcc3" >> "$MANIFEST"
-			echo "binary-component $FNAME ABI=Darwin_ppc-gcc3" >> "$MANIFEST"
+			echo "binary-component $FNAME ABI=Darwin_x86_64-gcc3" >> "$MANIFEST"
 		else
 			echo "binary-component $FNAME ABI=$PLATFORM" >> "$MANIFEST"
 		fi
